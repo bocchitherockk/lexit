@@ -1,6 +1,10 @@
 package src;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
+
+import javax.sound.sampled.UnsupportedAudioFileException;
+import javax.sound.sampled.LineUnavailableException;
 
 public class Game {
     private boolean isRunning;
@@ -9,7 +13,7 @@ public class Game {
     private Player player;
 
     // in game
-    private int visitedVerticesCount;
+    private ArrayList<Vertex> visitedVertices;
     private String collectedWord;
     private String message;
 
@@ -29,23 +33,24 @@ public class Game {
         this.map.fill();
         this.player = new Player(this.map.getStart(), Style.BG_RED, Style.ST_BOLD);
 
-        this.visitedVerticesCount = 0;
+        this.visitedVertices = new ArrayList<>();
         this.collectedWord = "";
         this.message = "";
     }
 
-    public void start() throws IOException {
+    public void start() throws IOException, UnsupportedAudioFileException, LineUnavailableException {
         this.isRunning = true;
         Scanner scanner = new Scanner(System.in);
         // for losing: (✖﹏✖)
         // for winning: ♡＼(￣▽￣)／♡
         /*
-            dijkstra = applyDijkstra();
-            if (this.visitedVerticesCount == dijkstra.get(this.map.getEnd())) {
-                this.message = "Congratulations!, you took the shortest path to the way out. Here is a 50 points reward for your braveness(≧▽≦)";
-                this.player.increaseScore(50);
+        dijkstra = applyDijkstra();
+        if (this.visitedVerticesCount == dijkstra.get(this.map.getEnd())) {
+            this.message = "Congratulations!, you took the shortest path to the way out. Here is a 50 points reward for your braveness(≧▽≦)";
+            this.player.increaseScore(50);
             }
-         */
+            */
+        SoundPlayer.loop("./pekora bgm(in game).wav");
         while (this.isRunning) {
             this.render();
             String input = scanner.nextLine().trim().toLowerCase();
@@ -57,7 +62,6 @@ public class Game {
                     this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ";
                     break;
                 }
-                this.visitedVerticesCount++;
                 this.collectedWord += this.player.getPosition().getLabel();
                 if (this.collectedWordExists(this.collectedWord)) {
                     // > do a dfs search to see if that path can reach you to the ending point of the labyrinth
