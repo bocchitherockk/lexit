@@ -41,11 +41,12 @@ public abstract class Style {
             System.out.print(style);
         }
     }
+
     public static void resetStyle() {
         System.out.print(Style.RESET);
     }
-    public static void resetCursorPosition(Labyrinth map) {
-        int rows = map.getGraph().getRowsCount() * (2 + 2 * map.getScalar()) + 3;
-        System.out.print("\u001B[" + rows + "A");
+
+    public static void clearScreen() {
+        System.out.print("\033[H\033[2J");
     }
 }

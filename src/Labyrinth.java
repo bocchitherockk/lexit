@@ -13,6 +13,8 @@ public class Labyrinth {
     private int scalar;
     private ArrayList<String> words;
     private Graph graph;
+    private Vertex start;
+    private Vertex end;
 
     // getters and setters
     public int getMaxColumns() { return this.maxColumns; }
@@ -20,6 +22,8 @@ public class Labyrinth {
     public int getScalar() { return this.scalar; }
     public ArrayList<String> getWords() { return this.words; }
     public Graph getGraph() { return this.graph; }
+    public Vertex getStart() { return this.start; }
+    public Vertex getEnd() { return this.end; }
 
 
     public Labyrinth(String filePath, int scalar) throws IOException {
@@ -51,9 +55,7 @@ public class Labyrinth {
                 allowedDirections.add(Graph.Direction.RIGHT);
             }
 
-            if (allowedDirections.size() == 0) {
-                break;
-            }
+            if (allowedDirections.size() == 0) break;
 
             Graph.Direction direction = this.getRandomDirection(allowedDirections);
 
@@ -71,14 +73,17 @@ public class Labyrinth {
                 currentX++;
             }
         } while (i-- != 0);
+
+        // for now i'll do this
+        this.start = this.graph.getVertexAt(0, 0);
+        this.end = this.graph.getVertexAt(currentX, currentY);
     }
 
     public Graph.Direction getRandomDirection(ArrayList<Graph.Direction> allowedDirections) {
         if (allowedDirections.size() == 0) {
             throw new IllegalArgumentException("At least one direction must be allowed.");
         }
-        Random random = new Random();
-        return allowedDirections.get(random.nextInt(allowedDirections.size()));
+        return allowedDirections.get(new Random().nextInt(allowedDirections.size()));
     }
 
     public static ArrayList<String> readWords(String filePath) throws IOException {

@@ -8,6 +8,12 @@ public class Game {
     private Labyrinth map;
     private Player player;
 
+    // in game
+    private int visitedVerticesCount;
+    private String collectedWord;
+    private String message;
+
+
     public Game(String filePath) throws IOException {
         this(filePath, Difficulty.EASY);
     }
@@ -21,49 +27,68 @@ public class Game {
         // if the difficulty is hard, the player should find the words flipped
         if (this.difficulty == Difficulty.HARD) this.map.flipWords();
         this.map.fill();
-        this.player = new Player(this.map.getGraph().getVertexAt(0, 0), Style.BG_RED, Style.ST_BOLD);
+        this.player = new Player(this.map.getStart(), Style.BG_RED, Style.ST_BOLD);
+
+        this.visitedVerticesCount = 0;
+        this.collectedWord = "";
+        this.message = "";
     }
 
     public void start() throws IOException {
         this.isRunning = true;
         Scanner scanner = new Scanner(System.in);
-        int visitedVerticesCount = 0;
-        String collectedWord = "";
-        String errorMessage = "";
+        // for losing: (✖﹏✖)
+        // for winning: ♡＼(￣▽￣)／♡
+        /*
+            dijkstra = applyDijkstra();
+            if (this.visitedVerticesCount == dijkstra.get(this.map.getEnd())) {
+                this.message = "Congratulations!, you took the shortest path to the way out. Here is a 50 points reward for your braveness(≧▽≦)";
+                this.player.increaseScore(50);
+            }
+         */
         while (this.isRunning) {
             this.render();
-            System.out.print("Score: " + this.player.getScore());
-            System.out.print("        collected word: " + collectedWord);
-            System.out.print(errorMessage.length() == 0 ? "" : "      message: " + errorMessage);
-            System.out.println();
-            System.out.print("enter your move(s): ");
             String input = scanner.nextLine().trim().toLowerCase();
-            System.out.println();
             while (!input.isEmpty()) {
                 char direction = input.charAt(0);
-                if (direction == 'z' || direction == 's' || direction == 'q' || direction == 'd') {
-                    this.player.move(direction);
-                    collectedWord += this.player.getPosition().getLabel();
-                    // if (the start of the word is found as the beginning of a word in the list of words) {
-                    //    > do a dfs search to see if that path can reach you to the ending point of the labyrinth
-                    // }
-                    // else {
-                    //    > subtract 5 points for each letter in the constructed word
-                    //    > undo the last move (don't forget to remove the last letter from the constructed word)
-                    // } 
-                } else {
-                    this.player.setScore(this.player.getScore() - input.length() * 5);
+                Vertex oldPosition = this.player.getPosition();
+                if (this.player.move(direction) == false) {
+                    this.player.decreaseScore(input.length() * 5);; // subtract 5 points for each letter from when the move is invalid
+                    this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ";
                     break;
+                }
+                this.visitedVerticesCount++;
+                this.collectedWord += this.player.getPosition().getLabel();
+                if (this.collectedWordExists(this.collectedWord)) {
+                    // > do a dfs search to see if that path can reach you to the ending point of the labyrinth
+                    /*  if (!dfs()) {
+                            // if the path can not reach you to the ending point of the labyrinth
+                            this.player.setScore(this.player.getScore() - 20); // subtract only 5 points
+                        } else*/ if (this.map.getWords().contains(this.collectedWord)) {
+                        this.message = "Congratulations!, you found the word: `" + this.collectedWord + "`! keep it up (≧▽≦)";
+                        this.collectedWord = "";
+                    }
+                } else {
+                    this.player.decreaseScore(20); // subtract only 20 points
+                    this.message = "No word starts with: `" + this.collectedWord + "` try again please (╥﹏╥)";
+                    this.player.setPosition(oldPosition);
+                    this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
                 }
                 input = input.substring(1);
             }
-            Style.resetCursorPosition(this.map);
         }
         scanner.close();
     }
 
+    public boolean collectedWordExists(String collectedWord) {
+        for (String word : this.map.getWords()) {
+            if (word.startsWith(collectedWord)) return true;
+        }
+        return false;
+    }
+
     public void render() {
-        /* level: EASY
+        /* level: MEDIUM/HARD
           ┌───┐  ┌───┐  ┌───┐
           │ A ├──┤ B ├──┤ D │
           └─┬─┘  └───┘  └───┘
@@ -72,7 +97,7 @@ public class Game {
           │ C │
           └───┘
          */
-        /* level: MEDIUM/HARD
+        /* level: EASY
           ┌─────┐    ┌─────┐    ┌─────┐
           │     │    │     │    │     │
           │  A  ├────┤  B  ├────┤  D  │
@@ -84,6 +109,7 @@ public class Game {
           │  C  │
           └─────┘
          */
+        Style.clearScreen();
         char[][] matrix = this.map.getGraph().toMatrix();
         String horizontalLine = "\u2500"; // ─
         String verticalLine = "\u2502"; // │
@@ -98,7 +124,6 @@ public class Game {
         String middleTop = "\u252c"; // ┬
         String middleBottom = "\u2534"; // ┴
 
-        // String cross = "\u253c"; // ┼
         String space = " ";
 
         int scalar = this.map.getScalar();
@@ -216,5 +241,11 @@ public class Game {
                 System.out.println();
             }
         }
+
+        // print the player's score and the collected word
+        System.out.print("Score: " + this.player.getScore());
+        System.out.print("        collected word: " + this.collectedWord);
+        System.out.println("        message: " + this.message);
+        System.out.print("enter your move(s): ");
     }
 }

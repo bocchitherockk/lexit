@@ -22,24 +22,23 @@ public class Player {
         this.score = 100;
     }
 
-    public void move(char move) {
+    public boolean move(char move) {
         Vertex to;
-        if (move == 'z') {
-            to = this.position.getUp();
-        } else if (move == 's') {
-            to = this.position.getDown();
-        } else if (move == 'q') {
-            to = this.position.getLeft();
-        } else if (move == 'd') {
-            to = this.position.getRight();
-        } else {
-            throw new IllegalArgumentException("Invalid move");
-        }
+        if (move == 'z') to = this.position.getUp();
+        else if (move == 's') to = this.position.getDown();
+        else if (move == 'q') to = this.position.getLeft();
+        else if (move == 'd') to = this.position.getRight();
+        else return false;
 
-        if (to == null) {
-            this.score -= 5;
-            return;
-        }
+        if (to == null) return false;
         this.position = to;
-   }
+        return true;
+    }
+
+    public void increaseScore(int amount) {
+        this.score += amount;
+    }
+    public void decreaseScore(int amount) {
+        this.score -= amount;
+    }
 }

@@ -85,11 +85,8 @@ public class Graph {
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < columns; x++) {
                 Vertex vertex = this.getVertexAt(x, y);
-                if (vertex != null) {
-                    matrix[y][x] = vertex.getLabel();
-                } else {
-                    matrix[y][x] = ' ';
-                }
+                if (vertex != null) matrix[y][x] = vertex.getLabel();
+                else matrix[y][x] = ' ';
             }
         }
         return matrix;
