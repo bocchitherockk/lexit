@@ -1,20 +1,24 @@
 package src;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class Player {
     private Vertex position;
-    private Color color;
     private int score;
+    private ArrayList<String> style;
 
     // getters and sertters
-    public Vertex getPosition() { return position; }
+    public Vertex getPosition() { return this.position; }
     public void setPosition(Vertex position) { this.position = position; }
-    public Color getColor() { return color; }
-    public void setColor(Color color) { this.color = color; }
-    public int getScore() { return score; }
+    public int getScore() { return this.score; }
     public void setScore(int score) { this.score = score; }
+    public ArrayList<String> getStyle() { return this.style; }
+    public void setStyle(ArrayList<String> style) { this.style = style; }
 
-    public Player(Vertex position, String ...colors) {
+    public Player(Vertex position, String ...styles) {
         this.position = position;
-        this.color = new Color(colors);
+        this.style = new ArrayList<>(Arrays.asList(styles));
         this.score = 100;
     }
 
@@ -32,10 +36,10 @@ public class Player {
             throw new IllegalArgumentException("Invalid move");
         }
 
-        if (to != null) {
-            this.position = to;
-        } else {
+        if (to == null) {
             this.score -= 5;
+            return;
         }
+        this.position = to;
    }
 }

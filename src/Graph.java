@@ -2,18 +2,15 @@ package src;
 import java.util.ArrayList;
 
 public class Graph {
+    public static enum Direction {
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT
+    }
+
     private ArrayList<Vertex> vertices;
-
-    // the terminal width can not hold more than 26 vertices
-    // the terminal height can not hold more than 10 vertices
-    public static final int MAX_Vertices_COLUMNS = 26;
-    public static final int MAX_Vertices_ROWS = 10; // it can hold up to 11, but then the last row will cause rerendering issues
-
-    public static final int UP = 0;
-    public static final int DOWN = 1;
-    public static final int LEFT = 2;
-    public static final int RIGHT = 3;
-
+    
     public Graph() {
         this.vertices = new ArrayList<>();
     }
@@ -23,9 +20,6 @@ public class Graph {
     }
 
     public void addVertexAt(char label, int x, int y) {
-        if (x >= Graph.MAX_Vertices_COLUMNS || y >= Graph.MAX_Vertices_ROWS) {
-            throw new IllegalArgumentException("The terminal can not hold more than " + Graph.MAX_Vertices_COLUMNS +  "columns and " + Graph.MAX_Vertices_ROWS + " rows.");
-        }
         Vertex newVertex = new Vertex(label, x, y);
         for (Vertex vertex : this.vertices) {
             if (vertex.getX() == x && vertex.getY() == y) {
@@ -51,30 +45,19 @@ public class Graph {
         this.vertices.add(newVertex);
     }
 
-    public void addVertexTo(char label, Vertex to, int direction) {
+    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
         int x = to.getX();
         int y = to.getY();
-        if (direction == Graph.UP) {
-            y--;
-        } else if (direction == Graph.DOWN) {
-            y++;
-        } else if (direction == Graph.LEFT) {
-            x--;
-        } else if (direction == Graph.RIGHT) {
-            x++;
-        }
-
-        if (x < 0 || x >= Graph.MAX_Vertices_COLUMNS || y < 0 || y >= Graph.MAX_Vertices_ROWS) {
-            throw new IllegalArgumentException("The vertex can not be added outside the terminal.");
-        }
+        if (direction == Graph.Direction.UP) y--;
+        else if (direction == Graph.Direction.DOWN) y++;
+        else if (direction == Graph.Direction.LEFT) x--;
+        else if (direction == Graph.Direction.RIGHT) x++;
         this.addVertexAt(label, x, y);
     }
 
     public Vertex getVertexAt(int x, int y) {
         for (Vertex vertex : this.vertices) {
-            if (vertex.getX() == x && vertex.getY() == y) {
-                return vertex;
-            }
+            if (vertex.getX() == x && vertex.getY() == y) return vertex;
         }
         return null;
     }
@@ -82,9 +65,7 @@ public class Graph {
     public int getColumnsCount() {
         int max = 0;
         for (Vertex vertex : this.vertices) {
-            if (vertex.getX() > max) {
-                max = vertex.getX();
-            }
+            if (vertex.getX() > max) max = vertex.getX();
         }
         return max + 1;
     }
@@ -92,9 +73,7 @@ public class Graph {
     public int getRowsCount() {
         int max = 0;
         for (Vertex vertex : this.vertices) {
-            if (vertex.getY() > max) {
-                max = vertex.getY();
-            }
+            if (vertex.getY() > max) max = vertex.getY();
         }
         return max + 1;
     }

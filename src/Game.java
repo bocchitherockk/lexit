@@ -1,44 +1,27 @@
 package src;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Game {
     private boolean isRunning;
-    private int difficulty; // 1 - easy, 2 - medium, 3 - hard
-    private Graph map;
+    private Difficulty difficulty;
+    private Labyrinth map;
     private Player player;
-    private ArrayList<String> words;
-
-    public static final int EASY = 1;
-    public static final int MEDIUM = 2;
-    public static final int HARD = 3;
 
     public Game(String filePath) throws IOException {
-        this(filePath, Game.EASY);
+        this(filePath, Difficulty.EASY);
     }
 
-    public Game(String filePath, int difficulty) throws IOException {
+    public Game(String filePath, Difficulty difficulty) throws IOException {
         this.isRunning = false;
         this.difficulty = difficulty;
-        this.map = Labyrinth.create();
-        this.player = new Player(this.map.getVertexAt(0, 0), Color.BG_RED, Color.ST_BOLD);
-        this.words = Labyrinth.readWords(filePath);
-        if (this.difficulty == Game.HARD) {
-            for (int i = 0; i < this.words.size(); i++) {
-                String currentString = this.words.get(i);
-                String reversedString = "";
-                for (int j = currentString.length() - 1; j >= 0; j--) {
-                    reversedString += currentString.charAt(j);
-                }
-                this.words.set(i, reversedString);
-            }
-        }
-    }
-
-    private void resetCursorPosition() {
-        int cols = this.map.getRowsCount() * 4 + 3;
-        System.out.print("\u001B[" + cols + "A");
+        int scalar = 1;
+        if (difficulty == Difficulty.EASY) scalar = 2;
+        this.map = new Labyrinth(filePath, scalar);
+        // if the difficulty is hard, the player should find the words flipped
+        if (this.difficulty == Difficulty.HARD) this.map.flipWords();
+        this.map.fill();
+        this.player = new Player(this.map.getGraph().getVertexAt(0, 0), Style.BG_RED, Style.ST_BOLD);
     }
 
     public void start() throws IOException {
@@ -74,13 +57,13 @@ public class Game {
                 }
                 input = input.substring(1);
             }
-            this.resetCursorPosition();
+            Style.resetCursorPosition(this.map);
         }
         scanner.close();
     }
 
     public void render() {
-        /*
+        /* level: EASY
           ┌───┐  ┌───┐  ┌───┐
           │ A ├──┤ B ├──┤ D │
           └─┬─┘  └───┘  └───┘
@@ -89,7 +72,19 @@ public class Game {
           │ C │
           └───┘
          */
-        char[][] matrix = this.map.toMatrix();
+        /* level: MEDIUM/HARD
+          ┌─────┐    ┌─────┐    ┌─────┐
+          │     │    │     │    │     │
+          │  A  ├────┤  B  ├────┤  D  │
+          └──┬──┘    └─────┘    └─────┘
+             │    
+             │
+          ┌──┴──┐
+          │     │
+          │  C  │
+          └─────┘
+         */
+        char[][] matrix = this.map.getGraph().toMatrix();
         String horizontalLine = "\u2500"; // ─
         String verticalLine = "\u2502"; // │
 
@@ -106,94 +101,120 @@ public class Game {
         // String cross = "\u253c"; // ┼
         String space = " ";
 
+        int scalar = this.map.getScalar();
+
         for (int y = 0; y < matrix.length; y++) {
             for (int x = 0; x < matrix[y].length; x++) {
                 if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                    this.player.getColor().apply();
+                    Style.applyStyle(this.player.getStyle());
                 }
 
                 if (matrix[y][x] == ' ') {
-                    System.out.print(space + space + space + space + space);
+                    System.out.print(space); // for the top left corner
+                    System.out.print(space.repeat(scalar)); // for the horizontal line
+                    System.out.print(space); // for the middle bottom line
+                    System.out.print(space.repeat(scalar)); // for the horizontal line
+                    System.out.print(space); // for the top right corner
                 } else {
                     System.out.print(topLeftCorner);
-                    System.out.print(horizontalLine);
+                    System.out.print(horizontalLine.repeat(scalar));
                     if (y != 0 && matrix[y - 1][x] != ' ') {
                         System.out.print(middleBottom);
                     } else {
                         System.out.print(horizontalLine);
                     }
-                    System.out.print(horizontalLine);
+                    System.out.print(horizontalLine.repeat(scalar));
                     System.out.print(topRightCorner);
                 }
-                this.player.getColor().reset();
-                System.out.print(space + space);
+                Style.resetStyle();
+                System.out.print(space.repeat(2).repeat(scalar));
             }
             System.out.println();
 
-            for (int x = 0; x < matrix[y].length; x++) {
-                if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                    this.player.getColor().apply();
-                }
+            for (int i = 0; i < scalar; i++) {
+                for (int x = 0; x < matrix[y].length; x++) {
+                    if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
+                        Style.applyStyle(this.player.getStyle());
+                    }
 
-                if (matrix[y][x] == ' ') {
-                    System.out.print(space + space + space + space + space);
-                } else {
-                    if (x != 0 && matrix[y][x - 1] != ' ') {
-                        System.out.print(middleRight);
+                    if (matrix[y][x] == ' ') {
+                        System.out.print(space); // for the middle right / vertical line
+                        System.out.print(space.repeat(scalar)); // for the space
+                        System.out.print(space); // for the label
+                        System.out.print(space.repeat(scalar)); // for the space
+                        System.out.print(space); // for the middle left / vertical line
                     } else {
-                        System.out.print(verticalLine);
+                        if (x != 0 && matrix[y][x - 1] != ' ' && i == scalar / 2) {
+                            System.out.print(middleRight);
+                        } else {
+                            System.out.print(verticalLine);
+                        }
+                        System.out.print(space.repeat(scalar));
+                        if (i == scalar / 2) {
+                            System.out.print(matrix[y][x]);
+                        } else {
+                            System.out.print(space);
+                        }
+                        // System.out.print("i == scalar / 2 = " + i + " == " + scalar / 2 + " = " + (boolean)(i == scalar / 2));
+                        System.out.print(space.repeat(scalar));
+                        if (x != matrix[y].length - 1 && matrix[y][x + 1] != ' ' && i == scalar / 2) {
+                            System.out.print(middleLeft);
+                        } else {
+                            System.out.print(verticalLine);
+                        }
                     }
-                    System.out.print(space);
-                    System.out.print(matrix[y][x]);
-                    System.out.print(space);
-                    if (x != matrix[y].length - 1 && matrix[y][x + 1] != ' ') {
-                        System.out.print(middleLeft);
+                    Style.resetStyle();
+                    if (matrix[y][x] != ' ' && x != matrix[y].length - 1 && matrix[y][x + 1] != ' ' && i == scalar / 2) {
+                        System.out.print(horizontalLine.repeat(2).repeat(scalar));
                     } else {
-                        System.out.print(verticalLine);
+                        System.out.print(space.repeat(2).repeat(scalar));
                     }
                 }
-                this.player.getColor().reset();
-                if (matrix[y][x] != ' ' && x != matrix[y].length - 1 && matrix[y][x + 1] != ' ') {
-                    System.out.print(horizontalLine + horizontalLine);
-                } else {
-                    System.out.print(space + space);
-                }
+                System.out.println();
             }
-            System.out.println();
 
             for (int x = 0; x < matrix[y].length; x++) {
                 if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                    this.player.getColor().apply();
+                    Style.applyStyle(this.player.getStyle());
                 }
 
                 if (matrix[y][x] == ' ') {
-                    System.out.print(space + space + space + space + space);
+                    System.out.print(space); // for the bottom left corner
+                    System.out.print(space.repeat(scalar)); // for the horizontal line
+                    System.out.print(space); // for the middle top / horizontal line
+                    System.out.print(space.repeat(scalar)); // for the horizontal line
+                    System.out.print(space); // for the bottom right corner
                 } else {
                     System.out.print(bottomLeftCorner);
-                    System.out.print(horizontalLine);
+                    System.out.print(horizontalLine.repeat(scalar));
                     if (y != matrix.length - 1 && matrix[y + 1][x] != ' ') {
                         System.out.print(middleTop);
                     } else {
                         System.out.print(horizontalLine);
                     }
-                    System.out.print(horizontalLine);
+                    System.out.print(horizontalLine.repeat(scalar));
                     System.out.print(bottomRightCorner);
                 }
-                this.player.getColor().reset();
-                System.out.print(space + space);
+                Style.resetStyle();
+                System.out.print(space.repeat(2).repeat(scalar));
             }
             System.out.println();
 
-            for (int x = 0; x < matrix[y].length; x++) {
-                System.out.print(space + space);
-                if (matrix[y][x] != ' ' && y != matrix.length - 1 && matrix[y + 1][x] != ' ') {
-                    System.out.print(verticalLine);
-                } else {
-                    System.out.print(space);
+            for (int i = 0; i < scalar; i++) {
+                for (int x = 0; x < matrix[y].length; x++) {
+                    System.out.print(space); // for the left corner
+                    System.out.print(space.repeat(scalar)); // for the horizontal line(s)
+                    if (matrix[y][x] != ' ' && y != matrix.length - 1 && matrix[y + 1][x] != ' ') {
+                        System.out.print(verticalLine);
+                    } else {
+                        System.out.print(space);
+                    }
+                    System.out.print(space.repeat(scalar)); // for the horizontal line(s)
+                    System.out.print(space); // for the right corner
+                    System.out.print(space.repeat(2).repeat(scalar));
                 }
-                System.out.print(space + space + space + space);
+                System.out.println();
             }
-            System.out.println();
         }
     }
 }
