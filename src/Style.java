@@ -30,16 +30,12 @@ public abstract class Style {
     public static final String ST_BLINK =     "\u001B[5m";
     public static final String ST_REVERSE =   "\u001B[7m";
 
-    public static void apply(String ...styles) {
-        for (String style : styles) {
-            System.out.print(style);
-        }
+    public static void applyStyle(String ...styles) {
+        for (String style : styles) System.out.print(style);
     }
 
     public static void applyStyle(ArrayList<String> styles) {
-        for (String style : styles) {
-            System.out.print(style);
-        }
+        for (String style : styles) System.out.print(style);
     }
 
     public static void resetStyle() {

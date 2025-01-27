@@ -58,26 +58,27 @@ public class Game {
                 char direction = input.charAt(0);
                 Vertex oldPosition = this.player.getPosition();
                 if (this.player.move(direction) == false) {
-                    this.player.decreaseScore(input.length() * 5);; // subtract 5 points for each letter from when the move is invalid
-                    this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ";
-                    break;
+                    // this.player.decreaseScore(input.length() * 5);; // subtract 5 points for each letter from when the move is invalid
+                    // this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ";
+                    // break;
                 }
                 this.collectedWord += this.player.getPosition().getLabel();
-                if (this.collectedWordExists(this.collectedWord)) {
-                    // > do a dfs search to see if that path can reach you to the ending point of the labyrinth
-                    /*  if (!dfs()) {
-                            // if the path can not reach you to the ending point of the labyrinth
-                            this.player.setScore(this.player.getScore() - 20); // subtract only 5 points
-                        } else*/ if (this.map.getWords().contains(this.collectedWord)) {
-                        this.message = "Congratulations!, you found the word: `" + this.collectedWord + "`! keep it up (≧▽≦)";
-                        this.collectedWord = "";
-                    }
-                } else {
-                    this.player.decreaseScore(20); // subtract only 20 points
-                    this.message = "No word starts with: `" + this.collectedWord + "` try again please (╥﹏╥)";
-                    this.player.setPosition(oldPosition);
-                    this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
-                }
+                // if (this.collectedWordExists(this.collectedWord)) {
+                //     // > do a dfs search to see if that path can reach you to the ending point of the labyrinth
+                //     /*  if (!dfs()) {
+                //             // if the path can not reach you to the ending point of the labyrinth
+                //             this.player.setScore(this.player.getScore() - 20); // subtract only 5 points
+                //         } else*/ if (this.map.getWords().contains(this.collectedWord)) {
+                //         this.message = "Congratulations!, you found the word: `" + this.collectedWord + "`! keep it up (≧▽≦)";
+                //         this.player.increaseScore(this.collectedWord.length() * 10);
+                //         this.collectedWord = "";
+                //     }
+                // } else {
+                //     this.player.decreaseScore(20); // subtract only 20 points
+                //     this.message = "No word starts with: `" + this.collectedWord + "` try again please (╥﹏╥)";
+                //     this.player.setPosition(oldPosition);
+                //     this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
+                // }
                 input = input.substring(1);
             }
         }
@@ -134,20 +135,18 @@ public class Game {
 
         for (int y = 0; y < matrix.length; y++) {
             for (int x = 0; x < matrix[y].length; x++) {
-                if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                    Style.applyStyle(this.player.getStyle());
-                }
-
-                if (matrix[y][x] == ' ') {
+                if (matrix[y][x] == '\0') {
                     System.out.print(space); // for the top left corner
                     System.out.print(space.repeat(scalar)); // for the horizontal line
                     System.out.print(space); // for the middle bottom line
                     System.out.print(space.repeat(scalar)); // for the horizontal line
                     System.out.print(space); // for the top right corner
                 } else {
+                    Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
+                    Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
                     System.out.print(topLeftCorner);
                     System.out.print(horizontalLine.repeat(scalar));
-                    if (y != 0 && matrix[y - 1][x] != ' ') {
+                    if (y != 0 && matrix[y - 1][x] != '\0') {
                         System.out.print(middleBottom);
                     } else {
                         System.out.print(horizontalLine);
@@ -162,18 +161,17 @@ public class Game {
 
             for (int i = 0; i < scalar; i++) {
                 for (int x = 0; x < matrix[y].length; x++) {
-                    if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                        Style.applyStyle(this.player.getStyle());
-                    }
-
-                    if (matrix[y][x] == ' ') {
+                    if (matrix[y][x] == '\0') {
                         System.out.print(space); // for the middle right / vertical line
                         System.out.print(space.repeat(scalar)); // for the space
                         System.out.print(space); // for the label
                         System.out.print(space.repeat(scalar)); // for the space
                         System.out.print(space); // for the middle left / vertical line
                     } else {
-                        if (x != 0 && matrix[y][x - 1] != ' ' && i == scalar / 2) {
+                        Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
+                        Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
+
+                        if (x != 0 && matrix[y][x - 1] != '\0' && i == scalar / 2) {
                             System.out.print(middleRight);
                         } else {
                             System.out.print(verticalLine);
@@ -184,16 +182,15 @@ public class Game {
                         } else {
                             System.out.print(space);
                         }
-                        // System.out.print("i == scalar / 2 = " + i + " == " + scalar / 2 + " = " + (boolean)(i == scalar / 2));
                         System.out.print(space.repeat(scalar));
-                        if (x != matrix[y].length - 1 && matrix[y][x + 1] != ' ' && i == scalar / 2) {
+                        if (x != matrix[y].length - 1 && matrix[y][x + 1] != '\0' && i == scalar / 2) {
                             System.out.print(middleLeft);
                         } else {
                             System.out.print(verticalLine);
                         }
                     }
                     Style.resetStyle();
-                    if (matrix[y][x] != ' ' && x != matrix[y].length - 1 && matrix[y][x + 1] != ' ' && i == scalar / 2) {
+                    if (matrix[y][x] != '\0' && x != matrix[y].length - 1 && matrix[y][x + 1] != '\0' && i == scalar / 2) {
                         System.out.print(horizontalLine.repeat(2).repeat(scalar));
                     } else {
                         System.out.print(space.repeat(2).repeat(scalar));
@@ -203,20 +200,19 @@ public class Game {
             }
 
             for (int x = 0; x < matrix[y].length; x++) {
-                if (x == this.player.getPosition().getX() && y == this.player.getPosition().getY()) {
-                    Style.applyStyle(this.player.getStyle());
-                }
-
-                if (matrix[y][x] == ' ') {
+                if (matrix[y][x] == '\0') {
                     System.out.print(space); // for the bottom left corner
                     System.out.print(space.repeat(scalar)); // for the horizontal line
                     System.out.print(space); // for the middle top / horizontal line
                     System.out.print(space.repeat(scalar)); // for the horizontal line
                     System.out.print(space); // for the bottom right corner
                 } else {
+                    Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
+                    Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
+
                     System.out.print(bottomLeftCorner);
                     System.out.print(horizontalLine.repeat(scalar));
-                    if (y != matrix.length - 1 && matrix[y + 1][x] != ' ') {
+                    if (y != matrix.length - 1 && matrix[y + 1][x] != '\0') {
                         System.out.print(middleTop);
                     } else {
                         System.out.print(horizontalLine);
@@ -233,7 +229,7 @@ public class Game {
                 for (int x = 0; x < matrix[y].length; x++) {
                     System.out.print(space); // for the left corner
                     System.out.print(space.repeat(scalar)); // for the horizontal line(s)
-                    if (matrix[y][x] != ' ' && y != matrix.length - 1 && matrix[y + 1][x] != ' ') {
+                    if (matrix[y][x] != '\0' && y != matrix.length - 1 && matrix[y + 1][x] != '\0') {
                         System.out.print(verticalLine);
                     } else {
                         System.out.print(space);

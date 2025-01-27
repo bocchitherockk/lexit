@@ -19,8 +19,8 @@ public class Graph {
         return this.vertices;
     }
 
-    public void addVertexAt(char label, int x, int y) {
-        Vertex newVertex = new Vertex(label, x, y);
+    public void addVertexAt(char label, int x, int y, boolean isWall) {
+        Vertex newVertex = new Vertex(label, x, y, isWall);
         for (Vertex vertex : this.vertices) {
             if (vertex.getX() == x && vertex.getY() == y) {
                 throw new IllegalArgumentException("A vertex already exists at this position.");
@@ -45,14 +45,14 @@ public class Graph {
         this.vertices.add(newVertex);
     }
 
-    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
+    public void addVertexTo(char label, Vertex to, Graph.Direction direction, boolean isWall) {
         int x = to.getX();
         int y = to.getY();
         if (direction == Graph.Direction.UP) y--;
         else if (direction == Graph.Direction.DOWN) y++;
         else if (direction == Graph.Direction.LEFT) x--;
         else if (direction == Graph.Direction.RIGHT) x++;
-        this.addVertexAt(label, x, y);
+        this.addVertexAt(label, x, y, isWall);
     }
 
     public Vertex getVertexAt(int x, int y) {
@@ -85,8 +85,9 @@ public class Graph {
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < columns; x++) {
                 Vertex vertex = this.getVertexAt(x, y);
-                if (vertex != null) matrix[y][x] = vertex.getLabel();
-                else matrix[y][x] = ' ';
+                if (vertex == null)       matrix[y][x] = '\0';
+                else if (vertex.isWall()) matrix[y][x] = '#';
+                else                      matrix[y][x] = vertex.getLabel();
             }
         }
         return matrix;

@@ -37,7 +37,7 @@ public class Labyrinth {
     public void fill() {
         int currentX = 0;
         int currentY = 0;
-        this.graph.addVertexAt('S', currentX, currentY);
+        this.graph.addVertexAt('$', currentX, currentY, false);
         int i = 50;
 
         do {
@@ -59,24 +59,32 @@ public class Labyrinth {
 
             Graph.Direction direction = this.getRandomDirection(allowedDirections);
 
+            Random random = new Random();
+            int randInt = random.nextInt(100);
+            boolean isWall = randInt < 10;
             if (direction == Graph.Direction.UP) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.UP);
-                currentY--;
+                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.UP, isWall);
+                currentY -= isWall ? 0 : 1;
             } else if (direction == Graph.Direction.DOWN) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.DOWN);
-                currentY++;
+                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.DOWN, isWall);
+                currentY += isWall ? 0 : 1;
             } else if (direction == Graph.Direction.LEFT) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.LEFT);
-                currentX--;
+                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.LEFT, isWall);
+                currentX -= isWall ? 0 : 1;
             } else if (direction == Graph.Direction.RIGHT) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.RIGHT);
-                currentX++;
+                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.RIGHT, isWall);
+                currentX += isWall ? 0 : 1;
             }
         } while (i-- != 0);
 
         // for now i'll do this
         this.start = this.graph.getVertexAt(0, 0);
+        this.start.getStyle().add(Style.BG_YELLOW);
+        this.start.getStyle().add(Style.FG_BLACK);
         this.end = this.graph.getVertexAt(currentX, currentY);
+        this.end.setLabel('@');
+        this.end.getStyle().add(Style.BG_GREEN);
+        this.end.getStyle().add(Style.FG_BLACK);
     }
 
     public Graph.Direction getRandomDirection(ArrayList<Graph.Direction> allowedDirections) {
@@ -97,14 +105,14 @@ public class Labyrinth {
         return words;
     }
 
-    public void addVertexAt(char label, int x, int y) {
+    public void addVertexAt(char label, int x, int y, boolean isWall) {
         if (x < 0 || x >= this.maxColumns || y < 0 || y >= this.maxRows) {
             throw new IllegalArgumentException("The vertex can not be added outside the terminal.");
         }
-        this.graph.addVertexAt(label, x, y);
+        this.graph.addVertexAt(label, x, y, isWall);
     }
 
-    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
+    public void addVertexTo(char label, Vertex to, Graph.Direction direction, boolean isWall) {
         int x = to.getX();
         int y = to.getY();
         if (x == this.maxColumns - 1 && direction == Graph.Direction.RIGHT ||
@@ -114,7 +122,7 @@ public class Labyrinth {
         ) {
             throw new IllegalArgumentException("The vertex can not be added outside the terminal.");
         }
-        this.graph.addVertexTo(label, to, direction);
+        this.graph.addVertexTo(label, to, direction, isWall);
     }
 
     public void flipWords() {
