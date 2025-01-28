@@ -6,7 +6,11 @@ public class Graph {
         UP,
         DOWN,
         LEFT,
-        RIGHT
+        RIGHT,
+        UP_LEFT,
+        UP_RIGHT,
+        DOWN_LEFT,
+        DOWN_RIGHT
     }
 
     private ArrayList<Vertex> vertices;
@@ -19,40 +23,62 @@ public class Graph {
         return this.vertices;
     }
 
-    public void addVertexAt(char label, int x, int y, boolean isWall) {
-        Vertex newVertex = new Vertex(label, x, y, isWall);
+    public void addVertex(Vertex newVertex) {
         for (Vertex vertex : this.vertices) {
-            if (vertex.getX() == x && vertex.getY() == y) {
+            if (vertex.getX() == newVertex.getX() && vertex.getY() == newVertex.getY()) {
                 throw new IllegalArgumentException("A vertex already exists at this position.");
-            }
-            if (vertex.getX() == x && vertex.getY() == y - 1) {
+            } else if (vertex.getX() == newVertex.getX() && vertex.getY() == newVertex.getY() - 1) {
                 vertex.setDown(newVertex);
                 newVertex.setUp(vertex);
-            }
-            if (vertex.getX() == x && vertex.getY() == y + 1) {
+            } else if (vertex.getX() == newVertex.getX() && vertex.getY() == newVertex.getY() + 1) {
                 vertex.setUp(newVertex);
                 newVertex.setDown(vertex);
-            }
-            if (vertex.getX() == x - 1 && vertex.getY() == y) {
+            } else if (vertex.getX() == newVertex.getX() - 1 && vertex.getY() == newVertex.getY()) {
                 vertex.setRight(newVertex);
                 newVertex.setLeft(vertex);
-            }
-            if (vertex.getX() == x + 1 && vertex.getY() == y) {
+            } else if (vertex.getX() == newVertex.getX() + 1 && vertex.getY() == newVertex.getY()) {
                 vertex.setLeft(newVertex);
                 newVertex.setRight(vertex);
+            } else if (vertex.getX() == newVertex.getX() - 1 && vertex.getY() == newVertex.getY() - 1) {
+                vertex.setDownRight(newVertex);
+                newVertex.setUpLeft(vertex);
+            } else if (vertex.getX() == newVertex.getX() + 1 && vertex.getY() == newVertex.getY() - 1) {
+                vertex.setDownLeft(newVertex);
+                newVertex.setUpRight(vertex);
+            } else if (vertex.getX() == newVertex.getX() - 1 && vertex.getY() == newVertex.getY() + 1) {
+                vertex.setUpRight(newVertex);
+                newVertex.setDownLeft(vertex);
+            } else if (vertex.getX() == newVertex.getX() + 1 && vertex.getY() == newVertex.getY() + 1) {
+                vertex.setUpLeft(newVertex);
+                newVertex.setDownRight(vertex);
             }
         }
         this.vertices.add(newVertex);
     }
 
-    public void addVertexTo(char label, Vertex to, Graph.Direction direction, boolean isWall) {
+    public void addVertexAt(char label, int x, int y) {
+        this.addVertex(new Vertex(label, x, y));
+    }
+
+    public void addVertexTo(Vertex what, Vertex to, Graph.Direction direction) {
+        // the what vertex's position is not important, it will change
         int x = to.getX();
         int y = to.getY();
-        if (direction == Graph.Direction.UP) y--;
-        else if (direction == Graph.Direction.DOWN) y++;
-        else if (direction == Graph.Direction.LEFT) x--;
-        else if (direction == Graph.Direction.RIGHT) x++;
-        this.addVertexAt(label, x, y, isWall);
+        if      (direction == Graph.Direction.UP)         { y--; }
+        else if (direction == Graph.Direction.DOWN)       { y++; }
+        else if (direction == Graph.Direction.LEFT)       { x--; }
+        else if (direction == Graph.Direction.RIGHT)      { x++; }
+        else if (direction == Graph.Direction.UP_LEFT)    { x--; y--; }
+        else if (direction == Graph.Direction.UP_RIGHT)   { x++; y--; }
+        else if (direction == Graph.Direction.DOWN_LEFT)  { x--; y++; }
+        else if (direction == Graph.Direction.DOWN_RIGHT) { x++; y++; }
+        what.setX(x);
+        what.setY(y);
+        this.addVertex(what);
+    }
+
+    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
+        this.addVertexTo(new Vertex(label, 0, 0), to, direction);
     }
 
     public Vertex getVertexAt(int x, int y) {
@@ -85,9 +111,11 @@ public class Graph {
         for (int y = 0; y < rows; y++) {
             for (int x = 0; x < columns; x++) {
                 Vertex vertex = this.getVertexAt(x, y);
-                if (vertex == null)       matrix[y][x] = '\0';
-                else if (vertex.isWall()) matrix[y][x] = '#';
-                else                      matrix[y][x] = vertex.getLabel();
+                if (vertex == null)        matrix[y][x] = '\0';
+                else if (vertex.isWall())  matrix[y][x] = '#';
+                else if (vertex.isStart()) matrix[y][x] = '$';
+                else if (vertex.isEnd())   matrix[y][x] = '@';
+                else                       matrix[y][x] = vertex.getLabel();
             }
         }
         return matrix;

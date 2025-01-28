@@ -26,18 +26,25 @@ public class Labyrinth {
     public Vertex getEnd() { return this.end; }
 
 
-    public Labyrinth(String filePath, int scalar) throws IOException {
-        this.scalar = scalar;
-        this.maxColumns = 26 / scalar;
-        this.maxRows = 10 / scalar;
+    public Labyrinth(String filePath, Difficulty difficulty) throws IOException {
+        this.scalar = difficulty == Difficulty.EASY ? 2 : 1;
+        this.maxColumns = 26 / this.scalar;
+        this.maxRows = 10 / this.scalar;
         this.words = Labyrinth.readWords(filePath);
+        // if the difficulty is hard, the player should find the words flipped
+        if (difficulty == Difficulty.HARD) this.flipWords();
         this.graph = new Graph();
+        this.start = null;
+        this.end = null;
+        this.fill();
     }
 
     public void fill() {
         int currentX = 0;
         int currentY = 0;
-        this.graph.addVertexAt('$', currentX, currentY, false);
+        this.start = new Vertex('$', currentX, currentY);
+        this.start.setStart(true);
+        this.graph.addVertex(this.start);
         int i = 50;
 
         do {
@@ -54,43 +61,49 @@ public class Labyrinth {
             if (currentX < this.maxColumns - 1 && this.graph.getVertexAt(currentX + 1, currentY) == null) {
                 allowedDirections.add(Graph.Direction.RIGHT);
             }
+            if (currentX > 0 && currentY > 0 && this.graph.getVertexAt(currentX - 1, currentY - 1) == null) {
+                allowedDirections.add(Graph.Direction.UP_LEFT);
+            }
+            if (currentX < this.maxColumns - 1 && currentY > 0 && this.graph.getVertexAt(currentX + 1, currentY - 1) == null) {
+                allowedDirections.add(Graph.Direction.UP_RIGHT);
+            }
+            if (currentX > 0 && currentY < this.maxRows - 1 && this.graph.getVertexAt(currentX - 1, currentY + 1) == null) {
+                allowedDirections.add(Graph.Direction.DOWN_LEFT);
+            }
+            if (currentX < this.maxColumns - 1 && currentY < this.maxRows - 1 && this.graph.getVertexAt(currentX + 1, currentY + 1) == null) {
+                allowedDirections.add(Graph.Direction.DOWN_RIGHT);
+            }
 
             if (allowedDirections.size() == 0) break;
 
             Graph.Direction direction = this.getRandomDirection(allowedDirections);
 
-            Random random = new Random();
-            int randInt = random.nextInt(100);
-            boolean isWall = randInt < 10;
+            boolean isWall = new Random().nextInt(100) < 10; // 10% chance of being a wall
+            Vertex newVertex = new Vertex((char) ('A' + i), currentX, currentY);
+            newVertex.setWall(isWall);
             if (direction == Graph.Direction.UP) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.UP, isWall);
+                this.graph.addVertexTo(newVertex, this.graph.getVertexAt(currentX, currentY), Graph.Direction.UP);
                 currentY -= isWall ? 0 : 1;
             } else if (direction == Graph.Direction.DOWN) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.DOWN, isWall);
+                this.graph.addVertexTo(newVertex, this.graph.getVertexAt(currentX, currentY), Graph.Direction.DOWN);
                 currentY += isWall ? 0 : 1;
             } else if (direction == Graph.Direction.LEFT) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.LEFT, isWall);
+                this.graph.addVertexTo(newVertex, this.graph.getVertexAt(currentX, currentY), Graph.Direction.LEFT);
                 currentX -= isWall ? 0 : 1;
             } else if (direction == Graph.Direction.RIGHT) {
-                this.graph.addVertexTo((char) ('A' + i), this.graph.getVertexAt(currentX, currentY), Graph.Direction.RIGHT, isWall);
+                this.graph.addVertexTo(newVertex, this.graph.getVertexAt(currentX, currentY), Graph.Direction.RIGHT);
                 currentX += isWall ? 0 : 1;
             }
         } while (i-- != 0);
 
         // for now i'll do this
-        this.start = this.graph.getVertexAt(0, 0);
-        this.start.getStyle().add(Style.BG_YELLOW);
-        this.start.getStyle().add(Style.FG_BLACK);
         this.end = this.graph.getVertexAt(currentX, currentY);
-        this.end.setLabel('@');
-        this.end.getStyle().add(Style.BG_GREEN);
-        this.end.getStyle().add(Style.FG_BLACK);
+        this.end.setEnd(true);
     }
 
     public Graph.Direction getRandomDirection(ArrayList<Graph.Direction> allowedDirections) {
-        if (allowedDirections.size() == 0) {
+        if (allowedDirections.size() == 0)
             throw new IllegalArgumentException("At least one direction must be allowed.");
-        }
         return allowedDirections.get(new Random().nextInt(allowedDirections.size()));
     }
 
@@ -105,14 +118,14 @@ public class Labyrinth {
         return words;
     }
 
-    public void addVertexAt(char label, int x, int y, boolean isWall) {
+    public void addVertexAt(char label, int x, int y) {
         if (x < 0 || x >= this.maxColumns || y < 0 || y >= this.maxRows) {
             throw new IllegalArgumentException("The vertex can not be added outside the terminal.");
         }
-        this.graph.addVertexAt(label, x, y, isWall);
+        this.graph.addVertexAt(label, x, y);
     }
 
-    public void addVertexTo(char label, Vertex to, Graph.Direction direction, boolean isWall) {
+    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
         int x = to.getX();
         int y = to.getY();
         if (x == this.maxColumns - 1 && direction == Graph.Direction.RIGHT ||
@@ -122,12 +135,11 @@ public class Labyrinth {
         ) {
             throw new IllegalArgumentException("The vertex can not be added outside the terminal.");
         }
-        this.graph.addVertexTo(label, to, direction, isWall);
+        this.graph.addVertexTo(label, to, direction);
     }
 
     public void flipWords() {
-        for (int i = 0; i < this.words.size(); i++) {
+        for (int i = 0; i < this.words.size(); i++)
             this.words.set(i, new StringBuilder(this.words.get(i)).reverse().toString());
-        }
     }
 }

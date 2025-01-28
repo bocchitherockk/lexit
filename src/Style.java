@@ -31,11 +31,14 @@ public abstract class Style {
     public static final String ST_REVERSE =   "\u001B[7m";
 
     public static void applyStyle(String ...styles) {
-        for (String style : styles) System.out.print(style);
+        for (String style : styles)
+            System.out.print(style);
     }
 
     public static void applyStyle(ArrayList<String> styles) {
-        for (String style : styles) System.out.print(style);
+        if (styles == null) return;
+        for (String style : styles)
+            System.out.print(style);
     }
 
     public static void resetStyle() {

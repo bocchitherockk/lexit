@@ -23,10 +23,14 @@ public class Player {
 
     public boolean move(char move) {
         Vertex to;
-        if (move == 'z') to = this.position.getUp();
-        else if (move == 's') to = this.position.getDown();
-        else if (move == 'q') to = this.position.getLeft();
-        else if (move == 'd') to = this.position.getRight();
+        if      (move == '1') to = this.position.getDownLeft();
+        else if (move == '2') to = this.position.getDown();
+        else if (move == '3') to = this.position.getDownRight();
+        else if (move == '4') to = this.position.getLeft();
+        else if (move == '6') to = this.position.getRight();
+        else if (move == '7') to = this.position.getUpLeft();
+        else if (move == '8') to = this.position.getUp();
+        else if (move == '9') to = this.position.getUpRight();
         else return false;
 
         if (to == null || to.isWall()) return false;

@@ -25,12 +25,7 @@ public class Game {
     public Game(String filePath, Difficulty difficulty) throws IOException {
         this.isRunning = false;
         this.difficulty = difficulty;
-        int scalar = 1;
-        if (difficulty == Difficulty.EASY) scalar = 2;
-        this.map = new Labyrinth(filePath, scalar);
-        // if the difficulty is hard, the player should find the words flipped
-        if (this.difficulty == Difficulty.HARD) this.map.flipWords();
-        this.map.fill();
+        this.map = new Labyrinth(filePath, difficulty);
         this.player = new Player(this.map.getStart(), Style.BG_RED, Style.ST_BOLD);
 
         this.visitedVertices = new ArrayList<>();
@@ -50,7 +45,7 @@ public class Game {
             this.player.increaseScore(50);
             }
             */
-        SoundPlayer.loop("./pekora bgm(in game).wav");
+        // SoundPlayer.loop("./pekora bgm(in game).wav");
         while (this.isRunning) {
             this.render();
             String input = scanner.nextLine().trim().toLowerCase();
@@ -96,23 +91,23 @@ public class Game {
         /* level: MEDIUM/HARD
           ┌───┐  ┌───┐  ┌───┐
           │ A ├──┤ B ├──┤ D │
-          └─┬─┘  └───┘  └───┘
-            │    
-          ┌─┴─┐
-          │ C │
-          └───┘
+          └─┬─┘  └─┬─┘  └───┘
+            │   ╳  │   ╱     
+          ┌─┴─┐  ┌─┴─┐       
+          │ C ├──┤ E │       
+          └───┘  └───┘       
          */
         /* level: EASY
           ┌─────┐    ┌─────┐    ┌─────┐
           │     │    │     │    │     │
           │  A  ├────┤  B  ├────┤  D  │
-          └──┬──┘    └─────┘    └─────┘
-             │    
-             │
-          ┌──┴──┐
-          │     │
-          │  C  │
-          └─────┘
+          └──┬──┘    └──┬──┘    └─────┘
+             │    ╲╱    │
+             │    ╱╲    │
+          ┌──┴──┐    ┌──┴──┐
+          │     │    │     │
+          │  C  ├────┤  E  │
+          └─────┘    └─────┘
          */
         Style.clearScreen();
         char[][] matrix = this.map.getGraph().toMatrix();
