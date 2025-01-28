@@ -7,22 +7,28 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.sound.sampled.LineUnavailableException;
 
 public class Game {
+    public enum Difficulty {
+        EASY,
+        MEDIUM,
+        HARD
+    }
+
     private boolean isRunning;
-    private Difficulty difficulty;
+    private Game.Difficulty difficulty;
     private Labyrinth map;
     private Player player;
 
     // in game
-    private ArrayList<Vertex> visitedVertices;
+    private ArrayList<Vertex> visitedVertices; // to be used to verify if the path conforms with what Dijsktra's algorithm returns
     private String collectedWord;
     private String message;
 
 
     public Game(String filePath) throws IOException {
-        this(filePath, Difficulty.EASY);
+        this(filePath, Game.Difficulty.EASY);
     }
 
-    public Game(String filePath, Difficulty difficulty) throws IOException {
+    public Game(String filePath, Game.Difficulty difficulty) throws IOException {
         this.isRunning = false;
         this.difficulty = difficulty;
         this.map = new Labyrinth(filePath, difficulty);

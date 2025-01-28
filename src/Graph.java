@@ -2,7 +2,7 @@ package src;
 import java.util.ArrayList;
 
 public class Graph {
-    public static enum Direction {
+    public enum Direction {
         UP,
         DOWN,
         LEFT,
@@ -60,7 +60,7 @@ public class Graph {
         this.addVertex(new Vertex(label, x, y));
     }
 
-    public void addVertexTo(Vertex what, Vertex to, Graph.Direction direction) {
+    public void attachVertexTo(Vertex what, Vertex to, Graph.Direction direction) {
         // the what vertex's position is not important, it will change
         int x = to.getX();
         int y = to.getY();
@@ -77,8 +77,8 @@ public class Graph {
         this.addVertex(what);
     }
 
-    public void addVertexTo(char label, Vertex to, Graph.Direction direction) {
-        this.addVertexTo(new Vertex(label, 0, 0), to, direction);
+    public void attachVertexTo(char label, Vertex to, Graph.Direction direction) {
+        this.attachVertexTo(new Vertex(label), to, direction);
     }
 
     public Vertex getVertexAt(int x, int y) {
