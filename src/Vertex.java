@@ -1,5 +1,6 @@
 package src;
 import java.util.ArrayList;
+import java.util.Collections;
 
 class Vertex {
     private char label; //label is not unique
@@ -56,51 +57,65 @@ class Vertex {
 
     public boolean isWall() { return this.isWall; }
     public void setWall(boolean isWall) {
-        if (!isWall) {
-            this.style = null;
-            return;
-        }
-        this.style = new ArrayList<>();
-        this.style.add(Style.BG_BLUE);
         this.isWall = isWall;
+        if (isWall == true) this.addStyles(Style.BG_BLUE);
+        else this.removeStyles(Style.BG_BLUE);
     }
 
-    public boolean isStart() { return this.isWall; }
+    public boolean isStart() { return this.isStart; }
     public void setStart(boolean isStart) {
-        if (!isStart) {
-            this.style = null;
-            return;
-        }
-        this.style = new ArrayList<>();
-        this.style.add(Style.BG_YELLOW);
-        this.style.add(Style.FG_BLACK);
         this.isStart = isStart;
+        if (isStart == true) this.addStyles(Style.BG_YELLOW, Style.FG_BLACK);
+        else this.removeStyles(Style.BG_YELLOW, Style.FG_BLACK);
     }
 
     public boolean isEnd() { return this.isEnd; }
     public void setEnd(boolean isEnd) {
-        if (!isEnd) {
-            this.style = null;
-            return;
-        }
-        this.style = new ArrayList<>();
-        this.style.add(Style.BG_GREEN);
-        this.style.add(Style.FG_BLACK);
         this.isEnd = isEnd;
+        if (isEnd == true) this.addStyles(Style.BG_GREEN, Style.FG_BLACK);
+        else this.removeStyles(Style.BG_GREEN, Style.FG_BLACK);
     }
 
     public ArrayList<String> getStyle() { return this.style; }
+    public void setStyle(ArrayList<String> style) { this.style = style; }
+    public void setStyle(String ...styles) {
+        this.style = new ArrayList<>();
+        for (String style : styles)
+            this.style.add(style);
+    }
+
+    public void addStyles(String ...style) {
+        if (this.style == null)
+            this.style = new ArrayList<>();
+        for (String s : style) {
+            this.style.add(s);
+        }
+    }
+
+    public void removeStyles(String ...style) {
+        if (this.style == null)
+            return;
+        for (String s : style) {
+            this.style.remove(s);
+        }
+    }
 
     public ArrayList<Vertex> getNeighbors() {
         ArrayList<Vertex> neighbors = new ArrayList<>();
         neighbors.add(up);
-        neighbors.add(down);
-        neighbors.add(left);
-        neighbors.add(right);
-        neighbors.add(upLeft);
         neighbors.add(upRight);
-        neighbors.add(downLeft);
+        neighbors.add(right);
         neighbors.add(downRight);
+        neighbors.add(down);
+        neighbors.add(downLeft);
+        neighbors.add(left);
+        neighbors.add(upLeft);
         return neighbors;
+    }
+
+    public ArrayList<Vertex> getNeighborsShuffled() {
+        ArrayList<Vertex> result = this.getNeighbors();
+        Collections.shuffle(result);
+        return result;
     }
 }

@@ -3,7 +3,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Random;
+import java.util.Stack;
 
 public class Labyrinth {
     // the terminal width can not hold more than 26 vertices
@@ -36,55 +38,61 @@ public class Labyrinth {
         this.graph = new Graph();
         this.start = null;
         this.end = null;
-        this.fill();
+        this.createEmpty();
     }
 
-    public void fill() {
+    public void createEmpty() throws IOException {
+        Random random = new Random();
         ArrayList<Vertex> verticesStack = new ArrayList<>();
-        this.start = new Vertex('$', 0, 0);
+
+        this.start = new Vertex('$', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
         this.start.setStart(true);
         this.graph.addVertex(this.start);
         verticesStack.add(this.start);
-        int i = this.maxColumns * this.maxRows;
 
-        while (!verticesStack.isEmpty() && i-- != 0) {
+        this.end = new Vertex('@', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
+        this.end.setEnd(true);
+        this.graph.addVertex(this.end);
+        verticesStack.add(this.end);
+        /* int i = this.maxColumns * this.maxRows; */ // may be used to limit the number of vertices for certain difficulties
+
+        while (!verticesStack.isEmpty()/* && i-- != 0 */) {
             Vertex currentVertex = verticesStack.getLast();
             ArrayList<Graph.Direction> allowedDirections = this.getAllowedDirections(currentVertex);
             if (allowedDirections.size() == 0) {
                 verticesStack.removeLast();
             } else {
-                Graph.Direction direction = this.getRandomDirection(allowedDirections);
-                boolean isWall = new Random().nextInt(100) < 10; // 10% chance of being a wall
-                Vertex newVertex = new Vertex((char) ('A'/* + this.graph.getVertices().size() */));
+                Graph.Direction direction = allowedDirections.get(random.nextInt(allowedDirections.size())); // choose a random direction
+                Vertex newVertex = new Vertex(' '); // empty vertex represented by a space
+                boolean isWall = random.nextInt(100) < 15; // 15% chance of being a wall
                 newVertex.setWall(isWall);
                 this.graph.attachVertexTo(newVertex, currentVertex, direction);
                 if (!isWall) verticesStack.add(newVertex);
             }
         }
 
-        this.end = this.graph.getVertices().getLast();
-        this.end.setWall(false); // if by chance the last vertex is a wall, it should be removed
-        this.end.setEnd(true);
     }
 
     public ArrayList<Graph.Direction> getAllowedDirections(Vertex currentVertex) {
         ArrayList<Graph.Direction> allowedDirections = new ArrayList<>();
-        if (currentVertex.getX() > 0 && currentVertex.getLeft() == null) allowedDirections.add(Graph.Direction.LEFT);
-        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getRight() == null) allowedDirections.add(Graph.Direction.RIGHT);
-        if (currentVertex.getY() > 0 && currentVertex.getUp() == null) allowedDirections.add(Graph.Direction.UP);
-        if (currentVertex.getY() < this.maxRows - 1 && currentVertex.getDown() == null) allowedDirections.add(Graph.Direction.DOWN);
-        if (currentVertex.getX() > 0 && currentVertex.getY() > 0 && currentVertex.getUpLeft() == null) allowedDirections.add(Graph.Direction.UP_LEFT);
-        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getY() > 0 && currentVertex.getUpRight() == null) allowedDirections.add(Graph.Direction.UP_RIGHT);
-        if (currentVertex.getX() > 0 && currentVertex.getY() < this.maxRows - 1 && currentVertex.getDownLeft() == null) allowedDirections.add(Graph.Direction.DOWN_LEFT);
-        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getY() < this.maxRows - 1 && currentVertex.getDownRight() == null) allowedDirections.add(Graph.Direction.DOWN_RIGHT);
+        if (currentVertex.getX() > 0 && currentVertex.getLeft() == null)
+            allowedDirections.add(Graph.Direction.LEFT);
+        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getRight() == null)
+            allowedDirections.add(Graph.Direction.RIGHT);
+        if (currentVertex.getY() > 0 && currentVertex.getUp() == null)
+            allowedDirections.add(Graph.Direction.UP);
+        if (currentVertex.getY() < this.maxRows - 1 && currentVertex.getDown() == null)
+            allowedDirections.add(Graph.Direction.DOWN);
+        if (currentVertex.getX() > 0 && currentVertex.getY() > 0 && currentVertex.getUpLeft() == null)
+            allowedDirections.add(Graph.Direction.UP_LEFT);
+        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getY() > 0 && currentVertex.getUpRight() == null)
+            allowedDirections.add(Graph.Direction.UP_RIGHT);
+        if (currentVertex.getX() > 0 && currentVertex.getY() < this.maxRows - 1 && currentVertex.getDownLeft() == null)
+            allowedDirections.add(Graph.Direction.DOWN_LEFT);
+        if (currentVertex.getX() < this.maxColumns - 1 && currentVertex.getY() < this.maxRows - 1 && currentVertex.getDownRight() == null)
+            allowedDirections.add(Graph.Direction.DOWN_RIGHT);
 
         return allowedDirections;
-    }
-
-    public Graph.Direction getRandomDirection(ArrayList<Graph.Direction> allowedDirections) {
-        if (allowedDirections.size() == 0)
-            throw new IllegalArgumentException("At least one direction must be allowed.");
-        return allowedDirections.get(new Random().nextInt(allowedDirections.size()));
     }
 
     public static ArrayList<String> readWords(String filePath) throws IOException {
@@ -120,5 +128,53 @@ public class Labyrinth {
     public void flipWords() {
         for (int i = 0; i < this.words.size(); i++)
             this.words.set(i, new StringBuilder(this.words.get(i)).reverse().toString());
+    }
+
+    public ArrayList<ArrayList<Vertex>> getDistinctPaths() {
+        ArrayList<ArrayList<Vertex>> distinctPaths = new ArrayList<>();
+        ArrayList<Vertex> currentPath = new ArrayList<>();
+        HashSet<Vertex> marked = new HashSet<>(); // this will hold the vertices that are already in a path
+        Stack<Pair<Vertex, Vertex>> stack = new Stack<>(); // the first vertex is the parent, the second is the current, i am storing the parent to correctly backtrack the path
+
+        for (Vertex neighbor : this.start.getNeighborsShuffled()) {
+            if (neighbor != null && !neighbor.isWall() && !neighbor.isEnd()) {
+                stack.push(new Pair<>(null, neighbor));
+            }
+        }
+
+        int initialStartingVerticesCount = stack.size();
+
+        while (!stack.isEmpty()) {
+            Pair<Vertex, Vertex> currentPair = stack.pop();
+            Vertex currentParent = currentPair.getKey();
+            Vertex currentVertex = currentPair.getValue();
+
+            if (marked.contains(currentVertex)) { // this could happen when a path is found, and the initial neighbors of the start are to be processed, but they are already in the first path
+                continue;
+            }
+
+            while (currentPath.size() != 0 && currentPath.getLast() != currentParent) {
+                currentPath.removeLast();
+            }
+
+            if (currentVertex == this.end) {
+                distinctPaths.add(new ArrayList<>(currentPath));
+                marked.addAll(currentPath);
+                currentPath.clear();
+                stack.setSize(--initialStartingVerticesCount); // clear the stack (except the first added ones, the neighbors of the start)
+            } else {
+                boolean hasExplorableNeighbors = currentVertex.getNeighbors().stream().anyMatch(v -> v != null && !v.isWall() && !v.isStart() && !currentPath.contains(v) && !marked.contains(v));
+                if (!hasExplorableNeighbors) {
+                    continue;
+                }
+                currentPath.add(currentVertex);
+                for (Vertex neighbor : currentVertex.getNeighborsShuffled()) {
+                    if (neighbor != null && !neighbor.isWall() && !neighbor.isStart() && !currentPath.contains(neighbor) && !marked.contains(neighbor)) {
+                        stack.push(new Pair<Vertex, Vertex>(currentVertex, neighbor));
+                    }
+                }
+            }
+        }
+        return distinctPaths;
     }
 }

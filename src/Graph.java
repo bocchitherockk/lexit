@@ -104,6 +104,7 @@ public class Graph {
         return max + 1;
     }
 
+    // used for rendering
     public char[][] toMatrix() {
         int rows = this.getRowsCount();
         int columns = this.getColumnsCount();
@@ -114,7 +115,7 @@ public class Graph {
                 if (vertex == null)        matrix[y][x] = '\0';
                 else if (vertex.isWall())  matrix[y][x] = '#';
                 else if (vertex.isStart()) matrix[y][x] = '$';
-                else if (vertex.isEnd())   matrix[y][x] = '@';
+                else if (vertex.isEnd())   matrix[y][x] = '£';
                 else                       matrix[y][x] = vertex.getLabel();
             }
         }

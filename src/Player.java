@@ -14,6 +14,28 @@ public class Player {
     public int getScore() { return this.score; }
     public void setScore(int score) { this.score = score; }
     public ArrayList<String> getStyle() { return this.style; }
+    public void setStyle(ArrayList<String> style) { this.style = style; }
+    public void setStyle(String ...styles) {
+        this.style = new ArrayList<>();
+        for (String style : styles)
+            this.style.add(style);
+    }
+
+    public void addStyles(String ...style) {
+        if (this.style == null)
+            this.style = new ArrayList<>();
+        for (String s : style) {
+            this.style.add(s);
+        }
+    }
+
+    public void removeStyles(String ...style) {
+        if (this.style == null)
+            return;
+        for (String s : style) {
+            this.style.remove(s);
+        }
+    }
 
     public Player(Vertex position, String ...styles) {
         this.position = position;

@@ -3,9 +3,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.LineUnavailableException;
-
 public class Game {
     public enum Difficulty {
         EASY,
@@ -23,6 +20,19 @@ public class Game {
     private String collectedWord;
     private String message;
 
+    public boolean isRunning() { return this.isRunning; }
+    public void setRunning(boolean isRunning) { this.isRunning = isRunning; }
+
+    public Game.Difficulty getDifficulty() { return this.difficulty; }
+    public void setDifficulty(Game.Difficulty difficulty) { this.difficulty = difficulty; }
+
+    public Labyrinth getMap() { return this.map; }
+    public void setMap(Labyrinth map) { this.map = map; }
+
+    public Player getPlayer() { return this.player; }
+    public void setPlayer(Player player) { this.player = player; }
+
+
 
     public Game(String filePath) throws IOException {
         this(filePath, Game.Difficulty.EASY);
@@ -39,7 +49,7 @@ public class Game {
         this.message = "";
     }
 
-    public void start() throws IOException, UnsupportedAudioFileException, LineUnavailableException {
+    public void start() throws IOException {
         this.isRunning = true;
         Scanner scanner = new Scanner(System.in);
         // for losing: (✖﹏✖)
