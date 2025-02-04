@@ -34,11 +34,11 @@ public class Game {
 
 
 
-    public Game(String filePath) throws IOException {
+    public Game(String filePath) throws IOException, Exception {
         this(filePath, Game.Difficulty.EASY);
     }
 
-    public Game(String filePath, Game.Difficulty difficulty) throws IOException {
+    public Game(String filePath, Game.Difficulty difficulty) throws IOException, Exception {
         this.isRunning = false;
         this.difficulty = difficulty;
         this.map = new Labyrinth(filePath, difficulty);
@@ -97,7 +97,7 @@ public class Game {
     }
 
     public boolean collectedWordExists(String collectedWord) {
-        for (String word : this.map.getWords()) {
+        for (String word : this.map.getDictionary()) {
             if (word.startsWith(collectedWord)) return true;
         }
         return false;
