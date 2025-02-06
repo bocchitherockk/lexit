@@ -43,7 +43,7 @@ public class Player {
         this.score = 100;
     }
 
-    public boolean move(char move) {
+    public void move(char move) throws InvalidMoveException {
         Vertex to;
         if      (move == '1') to = this.position.getDownLeft();
         else if (move == '2') to = this.position.getDown();
@@ -53,11 +53,11 @@ public class Player {
         else if (move == '7') to = this.position.getUpLeft();
         else if (move == '8') to = this.position.getUp();
         else if (move == '9') to = this.position.getUpRight();
-        else return false;
+        else throw new InvalidMoveException("Invalid move, use the numbers 1, 2, 3, 4, 6, 7, 8, 9 to move.");
 
-        if (to == null || to.isWall()) return false;
+        if (to == null) throw new InvalidMoveException("Invalid move, you can't go into the void.");
+        if (to.isWall()) throw new InvalidMoveException("Invalid move, you can't go through walls.");
         this.position = to;
-        return true;
     }
 
     public void increaseScore(int amount) {

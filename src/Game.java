@@ -1,4 +1,6 @@
 package src;
+import java.io.FileWriter;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -16,10 +18,10 @@ public class Game {
     private Player player;
 
     // in game
-    private ArrayList<Vertex> visitedVertices; // to be used to verify if the path conforms with what Dijsktra's algorithm returns
     private String collectedWord;
     private String message;
 
+    // getters and setters
     public boolean isRunning() { return this.isRunning; }
     public void setRunning(boolean isRunning) { this.isRunning = isRunning; }
 
@@ -34,17 +36,16 @@ public class Game {
 
 
 
-    public Game(String filePath) throws IOException, Exception {
+    public Game(String filePath) throws IOException, NoPathsException {
         this(filePath, Game.Difficulty.EASY);
     }
 
-    public Game(String filePath, Game.Difficulty difficulty) throws IOException, Exception {
+    public Game(String filePath, Game.Difficulty difficulty) throws IOException, NoPathsException {
         this.isRunning = false;
         this.difficulty = difficulty;
         this.map = new Labyrinth(filePath, difficulty);
         this.player = new Player(this.map.getStart(), Style.BG_RED, Style.ST_BOLD);
 
-        this.visitedVertices = new ArrayList<>();
         this.collectedWord = "";
         this.message = "";
     }
@@ -54,53 +55,69 @@ public class Game {
         Scanner scanner = new Scanner(System.in);
         // for losing: (✖﹏✖)
         // for winning: ♡＼(￣▽￣)／♡
-        /*
-        dijkstra = applyDijkstra();
-        if (this.visitedVerticesCount == dijkstra.get(this.map.getEnd())) {
-            this.message = "Congratulations!, you took the shortest path to the way out. Here is a 50 points reward for your braveness(≧▽≦)";
-            this.player.increaseScore(50);
-            }
-            */
+        ArrayList<Vertex> shortestPath = this.map.getShortestPath();
         // SoundPlayer.loop("./pekora bgm(in game).wav");
+        Pair<ArrayList<Vertex>, ArrayList<String>> activePath = null; // this is the path the player chooses to traverse, it will be set once the player starts moving
+        int activePathStep = 0; // this is the vertex index the player is currently at in the active path
+        FileWriter fw = new FileWriter(new File("help.txt"));
         while (this.isRunning) {
             this.render();
             String input = scanner.nextLine().trim().toLowerCase();
+            if (input.equals("help")) {
+                for (Pair<ArrayList<Vertex>, ArrayList<String>> pair : this.map.getDistinctPaths()) {
+                    for (String s : pair.getValue()) {
+                        fw.write(s + " ");
+                    }
+                    fw.write("\n********************************\n");
+                }
+                fw.flush();
+                continue;
+            }
             while (!input.isEmpty()) {
                 char direction = input.charAt(0);
                 Vertex oldPosition = this.player.getPosition();
-                if (this.player.move(direction) == false) {
-                    // this.player.decreaseScore(input.length() * 5);; // subtract 5 points for each letter from when the move is invalid
-                    // this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ";
-                    // break;
+                try {
+                    this.player.move(direction);
+                } catch (InvalidMoveException e) {
+                    this.player.decreaseScore(input.length() * 5);; // subtract 5 points for each letter from when the move is invalid
+                    this.message = "invalid move! ヾ( ･`⌓´･)ﾉﾞ" + e.getMessage();
+                    break;
+                }
+                if (this.player.getPosition() == this.map.getEnd()) {
+                    this.message = "Congratulations! you won the game! ♡＼(￣▽￣)／♡";
+                    this.isRunning = false;
+                    break;
                 }
                 this.collectedWord += this.player.getPosition().getLabel();
-                // if (this.collectedWordExists(this.collectedWord)) {
-                //     // > do a dfs search to see if that path can reach you to the ending point of the labyrinth
-                //     /*  if (!dfs()) {
-                //             // if the path can not reach you to the ending point of the labyrinth
-                //             this.player.setScore(this.player.getScore() - 20); // subtract only 5 points
-                //         } else*/ if (this.map.getWords().contains(this.collectedWord)) {
-                //         this.message = "Congratulations!, you found the word: `" + this.collectedWord + "`! keep it up (≧▽≦)";
-                //         this.player.increaseScore(this.collectedWord.length() * 10);
-                //         this.collectedWord = "";
-                //     }
-                // } else {
-                //     this.player.decreaseScore(20); // subtract only 20 points
-                //     this.message = "No word starts with: `" + this.collectedWord + "` try again please (╥﹏╥)";
-                //     this.player.setPosition(oldPosition);
-                //     this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
-                // }
+                if (activePath == null) {
+                    activePath = this.getActivePath(this.player.getPosition());
+                }
+                if (activePath == null || activePath.getKey().get(activePathStep) != this.player.getPosition()) {
+                    this.player.decreaseScore(5); // subtract only 5 points
+                    this.message = "No word starts with: `" + this.collectedWord + "` try again please (╥﹏╥)";
+                    this.player.setPosition(oldPosition);
+                    this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
+                    break;
+                } else if (activePath.getValue().contains(this.collectedWord)) {
+                    this.message = "Congratulations!, you found the word: `" + this.collectedWord + "`! keep it up (≧▽≦)";
+                    this.player.increaseScore(this.collectedWord.length() * 10);
+                    this.collectedWord = "";
+                } else {
+                    this.message = "";
+                }
+                this.player.getPosition().setStyle(Style.BG_BLUE);
+                activePathStep++;
                 input = input.substring(1);
             }
         }
         scanner.close();
     }
 
-    public boolean collectedWordExists(String collectedWord) {
-        for (String word : this.map.getDictionary()) {
-            if (word.startsWith(collectedWord)) return true;
+    public Pair<ArrayList<Vertex>, ArrayList<String>> getActivePath(Vertex start) {
+        for (Pair<ArrayList<Vertex>, ArrayList<String>> pair : this.map.getDistinctPaths()) {
+            if (pair.getKey().get(0) == start) return pair;
         }
-        return false;
+        return null;
     }
 
     public void render() {
