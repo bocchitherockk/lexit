@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 
 public class Game {
     public enum Difficulty {
@@ -36,11 +37,11 @@ public class Game {
 
 
 
-    public Game(String filePath) throws IOException, NoPathsException {
+    public Game(String filePath) throws IOException, InterruptedException, ExecutionException {
         this(filePath, Game.Difficulty.EASY);
     }
 
-    public Game(String filePath, Game.Difficulty difficulty) throws IOException, NoPathsException {
+    public Game(String filePath, Game.Difficulty difficulty) throws IOException, InterruptedException, ExecutionException {
         this.isRunning = false;
         this.difficulty = difficulty;
         this.map = new Labyrinth(filePath, difficulty);

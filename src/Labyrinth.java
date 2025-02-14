@@ -2,11 +2,16 @@ package src;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+
+import java.util.Random;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Random;
 import java.util.Stack;
+
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public class Labyrinth {
     // the terminal width can not hold more than 26 vertices
@@ -37,30 +42,28 @@ public class Labyrinth {
     public ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> getDistinctPaths() { return this.distinctPaths; }
 
 
-    public Labyrinth(String filePath, Game.Difficulty difficulty) throws IOException, NoPathsException {
+    public Labyrinth(String filePath, Game.Difficulty difficulty) throws IOException, InterruptedException, ExecutionException {
         this.scalar = difficulty == Game.Difficulty.EASY ? 2 : 1;
         this.maxColumns = 26 / this.scalar;
         this.maxRows = 10 / this.scalar;
         this.dictionary = Labyrinth.readDictionary(filePath);
+        Collections.shuffle(this.dictionary);
         // if the difficulty is hard, the player should find the words flipped
         if (difficulty == Game.Difficulty.HARD) this.flipDictionary();
-        Collections.shuffle(this.dictionary);
+
         ArrayList<ArrayList<Vertex>> emptyDistinctPaths;
-        while (true) { // keep creating new graphs until at least one path is found
+        long timeout = 1000; // 1000 ms = 1 seconds
+        int minPathsCount = 2;
+        while (true) { // keep creating new graphs until at least `minPathsCount` path(s) is found in under `timeout` seconds
             try {
                 this.graph = this.createEmpty();
-                emptyDistinctPaths = this.searchEmptyDistinctPaths();
-                break;
-            } catch (NoPathsException e) { /* do nothing */ }
-        }
-        while (true) { // keep creating new distinct paths until a combination of words can fit in it
-            try {
+                emptyDistinctPaths = TimeoutExecuter.execute(this::searchEmptyDistinctPaths, timeout); // search for paths in `timeout` seconds
+                if (emptyDistinctPaths.size() < minPathsCount) continue; // the number of paths should be at least `minPathsCount`
                 this.distinctPaths = this.associateWordsToPaths(emptyDistinctPaths);
                 break;
-            } catch (NoWordsCombinationException e) {
-                // if no combination of words is found, find new different paths
-                emptyDistinctPaths = this.searchEmptyDistinctPaths(); // this will not throw an exception because some paths are already found
             }
+            catch (TimeoutException e) { /* Timeout, will create a new labyrinth */ }
+            catch (NoWordsCombinationException e) { /* No words combination found, will create a new labyrinth */ }
         }
         this.fill();
     }
@@ -70,19 +73,24 @@ public class Labyrinth {
         Random random = new Random();
         Stack<Vertex> verticesStack = new Stack<>();
 
-        this.start = new Vertex('$', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
+        double wallPercentage = 15.0; // 15% chance of being a wall
+        double minDistance = 7; // the minimum euclidean distance between the start and the end vertices
+        double distance;
+        // int maxVertices = this.maxColumns * this.maxRows; // may be used to limit the number of vertices
+        // note: if the number of vertices is limited, the end vertex may not be reached
+
+        do { // make sure that the end vertex and the start vertex are far enough using the euclidean distance
+            this.start = new Vertex('$', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
+            this.end   = new Vertex('@', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
+            distance = Math.sqrt(Math.pow(this.end.getX() - this.start.getX(), 2) + Math.pow(this.end.getY() - this.start.getY(), 2));
+        } while (distance < minDistance); // the distance should be at least `minDistance`
+
         this.start.setStart(true);
+        this.end.setEnd(true);
         result.addVertex(this.start);
+        result.addVertex(this.end);
         verticesStack.push(this.start);
 
-        do { // make sure the end vertex is not at the same position as the start vertex
-            this.end = new Vertex('@', random.nextInt(this.maxColumns), random.nextInt(this.maxRows));
-        } while (this.end.getX() == this.start.getX() && this.end.getY() == this.start.getY());
-        this.end.setEnd(true);
-        result.addVertex(this.end);
-        /* int maxVertices = this.maxColumns * this.maxRows; */ // may be used to limit the number of vertices
-        // note: if the number of vertices is limited, the end vertex may not be reached
-        
         while (!verticesStack.isEmpty() /* && maxVertices-- != 0 */) {
             Vertex currentVertex = verticesStack.getLast();
             ArrayList<Graph.Direction> allowedDirections = this.getAllowedDirections(currentVertex);
@@ -92,7 +100,7 @@ public class Labyrinth {
             }
             Graph.Direction direction = allowedDirections.get(random.nextInt(allowedDirections.size())); // choose a random direction
             Vertex newVertex = new Vertex('\0'); // empty vertex represented by a '\0'
-            boolean isWall = random.nextInt(100) < 15; // 15% chance of being a wall
+            boolean isWall = random.nextInt(100) < wallPercentage;
             newVertex.setWall(isWall);
             result.attachVertexTo(newVertex, currentVertex, direction);
             if (!isWall) verticesStack.add(newVertex);
@@ -111,14 +119,14 @@ public class Labyrinth {
             for (int i = 0; i < path.size(); i++) {
                 path.get(i).setLabel(wordConcatinated.charAt(i));
             }
-            this.dictionary.removeAll(words);
         }
         Random random = new Random();
+        double wallPercentage = 50.0; // 50% chance of being a wall
         for (Vertex v : this.graph.getVertices()) {
             if (v.getLabel() == '\0') {
-                boolean isWall = random.nextInt(0, 101) < 50; // 50% chance of being a wall
+                boolean isWall = random.nextInt(100) < wallPercentage;
                 if (isWall) v.setWall(isWall);
-                else v.setLabel((char) (random.nextInt(0, 27) + 'a'));
+                else v.setLabel((char) (random.nextInt(0, 26) + 'a'));
             }
         }
     }
@@ -180,8 +188,7 @@ public class Labyrinth {
             this.dictionary.set(i, new StringBuilder(this.dictionary.get(i)).reverse().toString());
     }
 
-    // TODO: searchEmptyDistinctPaths, make it choose the end when it's one of the neighbors, don't procrastinate
-    public ArrayList<ArrayList<Vertex>> searchEmptyDistinctPaths() throws NoPathsException {
+    public ArrayList<ArrayList<Vertex>> searchEmptyDistinctPaths() {
         ArrayList<ArrayList<Vertex>> distinctPaths = new ArrayList<>();
         ArrayList<Vertex> currentPath = new ArrayList<>();
         HashSet<Vertex> marked = new HashSet<>(); // this will hold the vertices that are already in a path
@@ -208,7 +215,9 @@ public class Labyrinth {
                 currentPath.removeLast();
             }
 
-            if (currentVertex == this.end) {
+            boolean endIsNeighbor = currentVertex.getNeighbors().contains(this.end);
+            if (endIsNeighbor) {
+                currentPath.add(currentVertex);
                 distinctPaths.add(new ArrayList<>(currentPath));
                 marked.addAll(currentPath);
                 currentPath.clear();
@@ -226,11 +235,10 @@ public class Labyrinth {
                 }
             }
         }
-        if (distinctPaths.size() == 0) throw new NoPathsException("no distinct paths found!");
         return distinctPaths;
     }
 
-    public ArrayList<String> getFittingWords(ArrayList<String> dictionary, int pathLength) throws NoWordsCombinationException {
+    public ArrayList<String> getFittingWords(ArrayList<String> dictionary, int pathLength) {
         for (int i = 0; i < dictionary.size(); i++) {
             String word = dictionary.remove(i);
             pathLength -= word.length();
@@ -240,7 +248,8 @@ public class Labyrinth {
                 return result;
             } else if (pathLength < 0) {
                 dictionary.add(i, word);
-                return null;
+                pathLength += word.length();
+                continue;
             } else if (pathLength > 0) {
                 ArrayList<String> result = this.getFittingWords(dictionary, pathLength);
                 if (result == null) {
@@ -252,14 +261,15 @@ public class Labyrinth {
                 }
             }
         }
-        throw new NoWordsCombinationException("no combination of words with length " + pathLength + " found!");
-        // return null; // no combination of words found
+        return null; // no combination of words found for the current branch
     }
 
     public ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> associateWordsToPaths(ArrayList<ArrayList<Vertex>> emptyDistinctPaths) throws NoWordsCombinationException {
         ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> result = new ArrayList<>();
         for (ArrayList<Vertex> path : emptyDistinctPaths) {
             ArrayList<String> fittingWords = this.getFittingWords(this.dictionary, path.size());
+            if (fittingWords == null)
+                throw new NoWordsCombinationException("no combination of words with length " + path.size() + " found!");
             result.add(new Pair<>(path, fittingWords));
         }
         return result;
