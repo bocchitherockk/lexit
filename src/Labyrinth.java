@@ -267,7 +267,7 @@ public class Labyrinth {
     public ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> associateWordsToPaths(ArrayList<ArrayList<Vertex>> emptyDistinctPaths) throws NoWordsCombinationException {
         ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> result = new ArrayList<>();
         for (ArrayList<Vertex> path : emptyDistinctPaths) {
-            ArrayList<String> fittingWords = this.getFittingWords(this.dictionary, path.size());
+            ArrayList<String> fittingWords = this.getFittingWords(new ArrayList<>(this.dictionary), path.size());
             if (fittingWords == null)
                 throw new NoWordsCombinationException("no combination of words with length " + path.size() + " found!");
             result.add(new Pair<>(path, fittingWords));

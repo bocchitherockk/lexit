@@ -23,6 +23,6 @@ public class TimeoutExecuter {
     }
 
     public static <T> T execute(Callable<T> task, long timeout) throws TimeoutException, InterruptedException, ExecutionException {
-        return TimeoutExecuter.execute(task, timeout, TimeUnit.SECONDS);
+        return TimeoutExecuter.execute(task, timeout, TimeUnit.MILLISECONDS);
     }
 }
