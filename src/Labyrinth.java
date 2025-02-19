@@ -2,9 +2,7 @@ package src;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-
 import java.util.Random;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -266,8 +264,9 @@ public class Labyrinth {
 
     public ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> associateWordsToPaths(ArrayList<ArrayList<Vertex>> emptyDistinctPaths) throws NoWordsCombinationException {
         ArrayList<Pair<ArrayList<Vertex>, ArrayList<String>>> result = new ArrayList<>();
+        ArrayList<String> tempDictionary = new ArrayList<>(this.dictionary); // copy the dictionary to avoid modifying the original one
         for (ArrayList<Vertex> path : emptyDistinctPaths) {
-            ArrayList<String> fittingWords = this.getFittingWords(new ArrayList<>(this.dictionary), path.size());
+            ArrayList<String> fittingWords = this.getFittingWords(tempDictionary, path.size());
             if (fittingWords == null)
                 throw new NoWordsCombinationException("no combination of words with length " + path.size() + " found!");
             result.add(new Pair<>(path, fittingWords));
@@ -275,16 +274,94 @@ public class Labyrinth {
         return result;
     }
 
-    public ArrayList<Vertex> getShortestPath() {
-        ArrayList<Vertex> shortestPath = null;
-        int shortestPathLength = Integer.MAX_VALUE;
-        for (Pair<ArrayList<Vertex>, ArrayList<String>> pair : this.distinctPaths) {
-            ArrayList<Vertex> path = pair.getKey();
-            if (path.size() < shortestPathLength) {
-                shortestPath = path;
-                shortestPathLength = path.size();
+    public ArrayList<ArrayList<Vertex>> getAllValidPaths() {
+        ArrayList<ArrayList<Vertex>> paths = new ArrayList<>();
+        ArrayList<Vertex> currentPath = new ArrayList<>();
+        Stack<Triplet<Vertex, Integer, String>> stack = new Stack<>(); // the first vertex is the current, the second is the depth, i am storing the depth to correctly backtrack the path, the third is the word collected so far (current vertex's label is included)
+
+        for (Vertex neighbor : this.start.getNeighbors()) {
+            if (neighbor != null && !neighbor.isWall() && !neighbor.isEnd()) {
+                stack.push(new Triplet<>(neighbor, 0, String.valueOf(neighbor.getLabel())));
             }
         }
-        return shortestPath;
+
+        while (!stack.isEmpty()) {
+            Triplet<Vertex, Integer, String> currentTriplet = stack.pop();
+            Vertex currentVertex = currentTriplet.getFirstValue();
+            Integer currentDepth = currentTriplet.getSecondValue();
+            String currentWord = currentTriplet.getThirdValue();
+
+            currentPath.subList(currentDepth, currentPath.size()).clear();
+
+            if (!this.doesPrefixExist(currentWord)) continue;
+            else if (this.dictionary.contains(currentWord)) currentWord = "";
+
+            boolean endIsNeighbor = currentVertex.getNeighbors().contains(this.end);
+            if (endIsNeighbor && currentWord.isEmpty()) {
+                currentPath.add(currentVertex);
+                paths.add(new ArrayList<>(currentPath));
+            }
+            boolean hasExplorableNeighbors = currentVertex.getNeighbors().stream().anyMatch(v -> v != null && !v.isWall() && !v.isStart() && !v.isEnd() && !currentPath.contains(v));
+            if (!hasExplorableNeighbors) continue;
+
+            currentPath.add(currentVertex);
+            for (Vertex neighbor : currentVertex.getNeighbors()) {
+                if (neighbor != null && !neighbor.isWall() && !neighbor.isStart() && !neighbor.isEnd() && !currentPath.contains(neighbor)) {
+                    stack.push(new Triplet<Vertex, Integer, String>(neighbor, currentDepth + 1, currentWord + neighbor.getLabel()));
+                }
+            }
+        }
+        return paths;
+    }
+
+    public boolean endIsReachable(Vertex from, String collectedWord) {
+        ArrayList<Vertex> currentPath = new ArrayList<>();
+        Stack<Triplet<Vertex, Integer, String>> stack = new Stack<>(); // the first vertex is the current, the second is the depth, i am storing the depth to correctly backtrack the path, the third is the word collected so far (current vertex's label is included)
+
+        stack.push(new Triplet<>(from, 0, collectedWord));
+        boolean isReachable = false;
+
+        while (!stack.isEmpty() && !isReachable) {
+            Triplet<Vertex, Integer, String> currentTriplet = stack.pop();
+            Vertex currentVertex = currentTriplet.getFirstValue();
+            Integer currentDepth = currentTriplet.getSecondValue();
+            String currentWord = currentTriplet.getThirdValue();
+
+            currentPath.subList(currentDepth, currentPath.size()).clear();
+
+            if (!this.doesPrefixExist(currentWord)) continue;
+            else if (this.dictionary.contains(currentWord)) currentWord = "";
+
+            boolean endIsNeighbor = currentVertex.getNeighbors().contains(this.end);
+            if (endIsNeighbor && currentWord.isEmpty()) isReachable = true;
+
+            boolean hasExplorableNeighbors = currentVertex.getNeighbors().stream().anyMatch(v -> v != null && !v.isWall() && !v.isStart() && !v.isEnd() && !currentPath.contains(v));
+            if (!hasExplorableNeighbors) continue;
+
+            currentPath.add(currentVertex);
+            for (Vertex neighbor : currentVertex.getNeighbors()) {
+                if (neighbor != null && !neighbor.isWall() && !neighbor.isStart() && !neighbor.isEnd() && !currentPath.contains(neighbor)) {
+                    stack.push(new Triplet<Vertex, Integer, String>(neighbor, currentDepth + 1, currentWord + neighbor.getLabel()));
+                }
+            }
+        }
+        return isReachable;
+    }
+
+    public boolean doesPrefixExist(String prefix) {
+        for (String word : this.dictionary) {
+            if (word.startsWith(prefix))
+                return true;
+        }
+        return false;
+    }
+
+    public int getShortestPathLength(ArrayList<ArrayList<Vertex>> allPaths) {
+        if (allPaths.size() == 0) return 0;
+        int result = allPaths.get(0).size();
+        for (ArrayList<Vertex> path : allPaths) {
+            if (path.size() < result) result = path.size();
+        }
+        return result;
     }
 }
