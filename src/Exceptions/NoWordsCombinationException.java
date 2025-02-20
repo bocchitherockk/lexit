@@ -1,4 +1,4 @@
-package src;
+package src.Exceptions;
 
 public class NoWordsCombinationException extends Exception {
     public NoWordsCombinationException() {

@@ -1,4 +1,4 @@
-package src;
+package src.Exceptions;
 
 public class InvalidMoveException extends Exception {
     public InvalidMoveException() {

@@ -11,6 +11,8 @@ import java.util.Stack;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
+import src.Exceptions.NoWordsCombinationException;
+
 public class Labyrinth {
     // the terminal width can not hold more than 26 vertices
     // the terminal height can not hold more than 10 vertices

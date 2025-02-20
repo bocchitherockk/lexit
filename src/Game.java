@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.concurrent.ExecutionException;
 
+import src.Exceptions.InvalidMoveException;
+
 public class Game {
     public enum Difficulty {
         EASY,
@@ -163,17 +165,21 @@ public class Game {
         Style.clearScreen();
         char[][] matrix = this.map.getGraph().toMatrix();
         String horizontalLine = "\u2500"; // ─
-        String verticalLine = "\u2502"; // │
+        String verticalLine   = "\u2502"; // │
 
-        String topLeftCorner = "\u250c"; // ┌
-        String topRightCorner = "\u2510"; // ┐
-        String bottomLeftCorner = "\u2514"; // └
+        String topLeftCorner     = "\u250c"; // ┌
+        String topRightCorner    = "\u2510"; // ┐
+        String bottomLeftCorner  = "\u2514"; // └
         String bottomRightCorner = "\u2518"; // ┘
 
-        String middleLeft = "\u251c"; // ├
-        String middleRight = "\u2524"; // ┤
-        String middleTop = "\u252c"; // ┬
+        String middleLeft   = "\u251c"; // ├
+        String middleRight  = "\u2524"; // ┤
+        String middleTop    = "\u252c"; // ┬
         String middleBottom = "\u2534"; // ┴
+
+        String slash     = "\u2571"; // ╱
+        String backSlash = "\u2572"; // ╲
+        String cross     = "\u2573"; // ╳
 
         String space = " ";
 
@@ -271,6 +277,28 @@ public class Game {
             }
             System.out.println();
 
+        /* level: MEDIUM/HARD
+          ┌───┐  ┌───┐  ┌───┐
+          │ A ├──┤ B ├──┤ D │
+          └─┬─┘  └─┬─┘  └───┘
+            │   ╳  │   ╱     
+          ┌─┴─┐  ┌─┴─┐       
+          │ C ├──┤ E │       
+          └───┘  └───┘       
+         */
+        /* level: EASY
+          ┌─────┐    ┌─────┐    ┌─────┐
+          │     │    │     │    │     │
+          │  A  ├────┤  B  ├────┤  D  │
+          └──┬──┘    └──┬──┘    └─────┘
+             │    ╲╱    │
+             │    ╱╲    │
+          ┌──┴──┐    ┌──┴──┐
+          │     │    │     │
+          │  C  ├────┤  E  │
+          └─────┘    └─────┘
+         */
+
             for (int i = 0; i < scalar; i++) {
                 for (int x = 0; x < matrix[y].length; x++) {
                     System.out.print(space); // for the left corner
@@ -282,7 +310,35 @@ public class Game {
                     }
                     System.out.print(space.repeat(scalar)); // for the horizontal line(s)
                     System.out.print(space); // for the right corner
-                    System.out.print(space.repeat(2).repeat(scalar));
+                    System.out.print(space);
+
+                    int crosses = 0b0000; // this variable is used to determine the type of cross to print
+                    if (matrix[y][x] != '\0') crosses |= 0b0001;
+                    if (y != matrix.length - 1 && matrix[y + 1][x] != '\0') crosses |= 0b0010;
+                    if (x != matrix[y].length - 1 && matrix[y][x + 1] != '\0') crosses |= 0b0100;
+                    if (matrix[y][x] != '\0' && y != matrix.length - 1 && matrix[y + 1][x] != '\0' && x != matrix[y].length - 1 && matrix[y][x + 1] != '\0') crosses |= 0b1000;
+                    if (scalar == 1) { // hardh code this
+                        if (crosses == 0b1111) System.out.print(cross);
+                        else if (crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
+                        else if (crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
+                        else System.out.print(space);
+                    } else if (scalar == 2) {
+                        if (i == 0) {
+                            if (crosses == 0b1111 || crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
+                            else System.out.print(space);
+                        } else if (i == 1) {
+                            if (crosses == 0b1111 || crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
+                            else System.out.print(space);
+                        }
+                        if (i == 0) {
+                            if (crosses == 0b1111 || crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
+                            else System.out.print(space);
+                        } else if (i == 1) {
+                            if (crosses == 0b1111 || crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
+                            else System.out.print(space);
+                        }
+                        System.out.print(space);
+                    }
                 }
                 System.out.println();
             }

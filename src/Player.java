@@ -3,6 +3,8 @@ package src;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import src.Exceptions.InvalidMoveException;
+
 public class Player {
     private Vertex position;
     private int score;
