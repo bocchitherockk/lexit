@@ -48,4 +48,10 @@ public abstract class Style {
     public static void clearScreen() {
         System.out.print("\033[H\033[2J");
     }
+
+    public static void printStyled(String text, String ...styles) {
+        applyStyle(styles);
+        System.out.print(text);
+        resetStyle();
+    }
 }

@@ -44,8 +44,8 @@ public class Labyrinth {
 
     public Labyrinth(String filePath, Game.Difficulty difficulty) throws IOException, InterruptedException, ExecutionException {
         this.scalar = difficulty == Game.Difficulty.EASY ? 2 : 1;
-        this.maxColumns = 26 / this.scalar;
-        this.maxRows = 10 / this.scalar;
+        this.maxColumns = this.scalar == 1 ? 23 : 16; // in an ideal world, i would use the terminal width to calculate the max columns and rows
+        this.maxRows = this.scalar == 1 ? 10 : 6;
         this.dictionary = Labyrinth.readDictionary(filePath);
         Collections.shuffle(this.dictionary);
         // if the difficulty is hard, the player should find the words flipped

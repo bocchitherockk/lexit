@@ -36,7 +36,11 @@ public class Game {
     public Player getPlayer() { return this.player; }
     public void setPlayer(Player player) { this.player = player; }
 
+    public String getCollectedWord() { return this.collectedWord; }
+    public void setCollectedWord(String collectedWord) { this.collectedWord = collectedWord; }
 
+    public String getMessage() { return this.message; }
+    public void setMessage(String message) { this.message = message; }
 
     public Game(String filePath) throws IOException, InterruptedException, ExecutionException {
         this(filePath, Game.Difficulty.EASY);
@@ -61,7 +65,7 @@ public class Game {
         int steps = 0;
 
         while (this.isRunning) {
-            this.render();
+            Renderer.renderMap(this);
 
             String moves = scanner.nextLine().trim().toLowerCase();
             if (moves.startsWith("help")) {
@@ -113,7 +117,7 @@ public class Game {
                     this.collectedWord = this.collectedWord.substring(0, this.collectedWord.length() - 1);
                 }
                 this.player.getPosition().addStyles(Style.BG_CYAN);
-                this.render();
+                Renderer.renderMap(this);;
                 moves = moves.substring(1);
             }
         }
@@ -132,222 +136,11 @@ public class Game {
             for (Vertex v : this.map.getDistinctPaths().get(i).getKey()) {
                 v.addStyles("\u001B[4" + (1 + i) + "m");
             }
-            this.render();
+            Renderer.renderMap(this);
             Thread.sleep(500 * helpLevel);
             for (Vertex v : this.map.getDistinctPaths().get(i).getKey()) {
                 v.removeStyles("\u001B[4" + (1 + i) + "m");
             }
         }
-    }
-
-    public void render() {
-        /* level: MEDIUM/HARD
-          ┌───┐  ┌───┐  ┌───┐
-          │ A ├──┤ B ├──┤ D │
-          └─┬─┘  └─┬─┘  └───┘
-            │   ╳  │   ╱     
-          ┌─┴─┐  ┌─┴─┐       
-          │ C ├──┤ E │       
-          └───┘  └───┘       
-         */
-        /* level: EASY
-          ┌─────┐    ┌─────┐    ┌─────┐
-          │     │    │     │    │     │
-          │  A  ├────┤  B  ├────┤  D  │
-          └──┬──┘    └──┬──┘    └─────┘
-             │    ╲╱    │
-             │    ╱╲    │
-          ┌──┴──┐    ┌──┴──┐
-          │     │    │     │
-          │  C  ├────┤  E  │
-          └─────┘    └─────┘
-         */
-        Style.clearScreen();
-        char[][] matrix = this.map.getGraph().toMatrix();
-        String horizontalLine = "\u2500"; // ─
-        String verticalLine   = "\u2502"; // │
-
-        String topLeftCorner     = "\u250c"; // ┌
-        String topRightCorner    = "\u2510"; // ┐
-        String bottomLeftCorner  = "\u2514"; // └
-        String bottomRightCorner = "\u2518"; // ┘
-
-        String middleLeft   = "\u251c"; // ├
-        String middleRight  = "\u2524"; // ┤
-        String middleTop    = "\u252c"; // ┬
-        String middleBottom = "\u2534"; // ┴
-
-        String slash     = "\u2571"; // ╱
-        String backSlash = "\u2572"; // ╲
-        String cross     = "\u2573"; // ╳
-
-        String space = " ";
-
-        int scalar = this.map.getScalar();
-
-        for (int y = 0; y < matrix.length; y++) {
-            for (int x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x] == '\0') {
-                    System.out.print(space); // for the top left corner
-                    System.out.print(space.repeat(scalar)); // for the horizontal line
-                    System.out.print(space); // for the middle bottom line
-                    System.out.print(space.repeat(scalar)); // for the horizontal line
-                    System.out.print(space); // for the top right corner
-                } else {
-                    Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
-                    Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
-                    System.out.print(topLeftCorner);
-                    System.out.print(horizontalLine.repeat(scalar));
-                    if (y != 0 && matrix[y - 1][x] != '\0') {
-                        System.out.print(middleBottom);
-                    } else {
-                        System.out.print(horizontalLine);
-                    }
-                    System.out.print(horizontalLine.repeat(scalar));
-                    System.out.print(topRightCorner);
-                }
-                Style.resetStyle();
-                System.out.print(space.repeat(2).repeat(scalar));
-            }
-            System.out.println();
-
-            for (int i = 0; i < scalar; i++) {
-                for (int x = 0; x < matrix[y].length; x++) {
-                    if (matrix[y][x] == '\0') {
-                        System.out.print(space); // for the middle right / vertical line
-                        System.out.print(space.repeat(scalar)); // for the space
-                        System.out.print(space); // for the label
-                        System.out.print(space.repeat(scalar)); // for the space
-                        System.out.print(space); // for the middle left / vertical line
-                    } else {
-                        Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
-                        Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
-
-                        if (x != 0 && matrix[y][x - 1] != '\0' && i == scalar / 2) {
-                            System.out.print(middleRight);
-                        } else {
-                            System.out.print(verticalLine);
-                        }
-                        System.out.print(space.repeat(scalar));
-                        if (i == scalar / 2) {
-                            System.out.print(matrix[y][x]);
-                        } else {
-                            System.out.print(space);
-                        }
-                        System.out.print(space.repeat(scalar));
-                        if (x != matrix[y].length - 1 && matrix[y][x + 1] != '\0' && i == scalar / 2) {
-                            System.out.print(middleLeft);
-                        } else {
-                            System.out.print(verticalLine);
-                        }
-                    }
-                    Style.resetStyle();
-                    if (matrix[y][x] != '\0' && x != matrix[y].length - 1 && matrix[y][x + 1] != '\0' && i == scalar / 2) {
-                        System.out.print(horizontalLine.repeat(2).repeat(scalar));
-                    } else {
-                        System.out.print(space.repeat(2).repeat(scalar));
-                    }
-                }
-                System.out.println();
-            }
-
-            for (int x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x] == '\0') {
-                    System.out.print(space); // for the bottom left corner
-                    System.out.print(space.repeat(scalar)); // for the horizontal line
-                    System.out.print(space); // for the middle top / horizontal line
-                    System.out.print(space.repeat(scalar)); // for the horizontal line
-                    System.out.print(space); // for the bottom right corner
-                } else {
-                    Vertex currentVertex = this.map.getGraph().getVertexAt(x, y);
-                    Style.applyStyle(currentVertex == this.player.getPosition() ? this.player.getStyle() : currentVertex.getStyle());
-
-                    System.out.print(bottomLeftCorner);
-                    System.out.print(horizontalLine.repeat(scalar));
-                    if (y != matrix.length - 1 && matrix[y + 1][x] != '\0') {
-                        System.out.print(middleTop);
-                    } else {
-                        System.out.print(horizontalLine);
-                    }
-                    System.out.print(horizontalLine.repeat(scalar));
-                    System.out.print(bottomRightCorner);
-                }
-                Style.resetStyle();
-                System.out.print(space.repeat(2).repeat(scalar));
-            }
-            System.out.println();
-
-        /* level: MEDIUM/HARD
-          ┌───┐  ┌───┐  ┌───┐
-          │ A ├──┤ B ├──┤ D │
-          └─┬─┘  └─┬─┘  └───┘
-            │   ╳  │   ╱     
-          ┌─┴─┐  ┌─┴─┐       
-          │ C ├──┤ E │       
-          └───┘  └───┘       
-         */
-        /* level: EASY
-          ┌─────┐    ┌─────┐    ┌─────┐
-          │     │    │     │    │     │
-          │  A  ├────┤  B  ├────┤  D  │
-          └──┬──┘    └──┬──┘    └─────┘
-             │    ╲╱    │
-             │    ╱╲    │
-          ┌──┴──┐    ┌──┴──┐
-          │     │    │     │
-          │  C  ├────┤  E  │
-          └─────┘    └─────┘
-         */
-
-            for (int i = 0; i < scalar; i++) {
-                for (int x = 0; x < matrix[y].length; x++) {
-                    System.out.print(space); // for the left corner
-                    System.out.print(space.repeat(scalar)); // for the horizontal line(s)
-                    if (matrix[y][x] != '\0' && y != matrix.length - 1 && matrix[y + 1][x] != '\0') {
-                        System.out.print(verticalLine);
-                    } else {
-                        System.out.print(space);
-                    }
-                    System.out.print(space.repeat(scalar)); // for the horizontal line(s)
-                    System.out.print(space); // for the right corner
-                    System.out.print(space);
-
-                    int crosses = 0b0000; // this variable is used to determine the type of cross to print
-                    if (matrix[y][x] != '\0') crosses |= 0b0001;
-                    if (y != matrix.length - 1 && matrix[y + 1][x] != '\0') crosses |= 0b0010;
-                    if (x != matrix[y].length - 1 && matrix[y][x + 1] != '\0') crosses |= 0b0100;
-                    if (matrix[y][x] != '\0' && y != matrix.length - 1 && matrix[y + 1][x] != '\0' && x != matrix[y].length - 1 && matrix[y][x + 1] != '\0') crosses |= 0b1000;
-                    if (scalar == 1) { // hardh code this
-                        if (crosses == 0b1111) System.out.print(cross);
-                        else if (crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
-                        else if (crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
-                        else System.out.print(space);
-                    } else if (scalar == 2) {
-                        if (i == 0) {
-                            if (crosses == 0b1111 || crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
-                            else System.out.print(space);
-                        } else if (i == 1) {
-                            if (crosses == 0b1111 || crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
-                            else System.out.print(space);
-                        }
-                        if (i == 0) {
-                            if (crosses == 0b1111 || crosses == 0b0110 || crosses == 0b0111 || crosses == 0b1110) System.out.print(slash);
-                            else System.out.print(space);
-                        } else if (i == 1) {
-                            if (crosses == 0b1111 || crosses == 0b1001 || crosses == 0b1011 || crosses == 0b1101) System.out.print(backSlash);
-                            else System.out.print(space);
-                        }
-                        System.out.print(space);
-                    }
-                }
-                System.out.println();
-            }
-        }
-
-        // print the player's score and the collected word
-        System.out.print("Score: " + this.player.getScore());
-        System.out.print("        collected word: " + this.collectedWord);
-        System.out.println("        message: " + this.message);
-        System.out.print("enter your move(s): ");
     }
 }
