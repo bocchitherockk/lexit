@@ -1,24 +1,53 @@
 package src;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+
 public class Renderer {
-    public static final String horizontalLine    = "\u2500"; // ─
-    public static final String verticalLine      = "\u2502"; // │
+    private static final String horizontalLine    = "\u2500"; // ─
+    private static final String verticalLine      = "\u2502"; // │
 
-    public static final String topLeftCorner     = "\u250c"; // ┌
-    public static final String topRightCorner    = "\u2510"; // ┐
-    public static final String bottomLeftCorner  = "\u2514"; // └
-    public static final String bottomRightCorner = "\u2518"; // ┘
+    private static final String topLeftCorner     = "\u250c"; // ┌
+    private static final String topRightCorner    = "\u2510"; // ┐
+    private static final String bottomLeftCorner  = "\u2514"; // └
+    private static final String bottomRightCorner = "\u2518"; // ┘
 
-    public static final String middleLeft        = "\u251c"; // ├
-    public static final String middleRight       = "\u2524"; // ┤
-    public static final String middleTop         = "\u252c"; // ┬
-    public static final String middleBottom      = "\u2534"; // ┴
+    private static final String middleLeft        = "\u251c"; // ├
+    private static final String middleRight       = "\u2524"; // ┤
+    private static final String middleTop         = "\u252c"; // ┬
+    private static final String middleBottom      = "\u2534"; // ┴
 
-    public static final String slash             = "\u2571"; // ╱
-    public static final String backSlash         = "\u2572"; // ╲
-    public static final String cross             = "\u2573"; // ╳
+    private static final String slash             = "\u2571"; // ╱
+    private static final String backSlash         = "\u2572"; // ╲
+    private static final String cross             = "\u2573"; // ╳
 
-    public static final String space             = " ";
+    private static final String space             = " ";
+
+    private static final String graffiti = """
+                            __      __       .__                                  __           .____                 .__  __  ._.
+                           /  \\    /  \\ ____ |  |   ____  ____   _____   ____   _/  |_  ____   |    |    ____ ___  __|__|/  |_| |
+                           \\   \\/\\/   // __ \\|  | _/ ___\\/  _ \\ /     \\_/ __ \\  \\   __\\/  _ \\  |    |  _/ __ \\\\  \\/  /  \\   __\\ |
+                            \\        /\\  ___/|  |_\\  \\__(  <_> )  Y Y  \\  ___/   |  | (  <_> ) |    |__\\  ___/ >    <|  ||  |  \\|
+                             \\__/\\  /  \\___  >____/\\___  >____/|__|_|  /\\___  >  |__|  \\____/  |_______ \\___  >__/\\_ \\__||__|  __
+                                  \\/       \\/          \\/            \\/     \\/                         \\/   \\/      \\/         \\/
+               
+               
+               ___________.__            .___   __  .__              __      __                .___                          .___                                            
+               \\_   _____/|__| ____    __| _/ _/  |_|  |__   ____   /  \\    /  \\___________  __| _/______ _____    ____    __| _/   ____   ______ ____ _____  ______   ____  
+                |    __)  |  |/    \\  / __ |  \\   __\\  |  \\_/ __ \\  \\   \\/\\/   /  _ \\_  __ \\/ __ |/  ___/ \\__  \\  /    \\  / __ |  _/ __ \\ /  ___// ___\\\\__  \\ \\____ \\_/ __ \\ 
+                |     \\   |  |   |  \\/ /_/ |   |  | |   Y  \\  ___/   \\        (  <_> )  | \\/ /_/ |\\___ \\   / __ \\|   |  \\/ /_/ |  \\  ___/ \\___ \\\\  \\___ / __ \\|  |_> >  ___/ 
+                \\___  /   |__|___|  /\\____ |   |__| |___|  /\\___  >   \\__/\\  / \\____/|__|  \\____ /____  > (____  /___|  /\\____ |   \\___  >____  >\\___  >____  /   __/ \\___  >
+                    \\/            \\/      \\/             \\/     \\/         \\/                   \\/    \\/       \\/     \\/      \\/       \\/     \\/     \\/     \\/|__|        \\/ 
+               
+                                                                                                 __  .__                _____                        
+                                                                                               _/  |_|  |__   ____     /     \\ _____  ________ ____  
+                                                                                               \\   __\\  |  \\_/ __ \\   /  \\ /  \\\\__  \\ \\___   // __ \\ 
+                                                                                                |  | |   Y  \\  ___/  /    Y    \\/ __ \\_/    /\\  ___/ 
+                                                                                                |__| |___|  /\\___  > \\____|__  (____  /_____ \\\\___  >
+                                                                                                          \\/     \\/          \\/     \\/      \\/    \\/ 
+""";
 
     private static String center(String s, int width) {
         int leftPadding = (width - s.length()) / 2;
@@ -26,45 +55,13 @@ public class Renderer {
         return " ".repeat(leftPadding) + s + " ".repeat(rightPadding);
     }
 
-    public static void renderMainMenu(int selected) { // the selected parameter is used to highlight the selected option, 0, 1, 2
+    private static void renderMenu(String[] options, int selected) { // the selected parameter is used to highlight the selected option, 0, 1, 2
         Style.clearScreen();
-        String graffiti = """
 
-
-
-                                __      __       .__                                  __           .____                 .__  __  ._.
-                               /  \\    /  \\ ____ |  |   ____  ____   _____   ____   _/  |_  ____   |    |    ____ ___  __|__|/  |_| |
-                               \\   \\/\\/   // __ \\|  | _/ ___\\/  _ \\ /     \\_/ __ \\  \\   __\\/  _ \\  |    |  _/ __ \\\\  \\/  /  \\   __\\ |
-                                \\        /\\  ___/|  |_\\  \\__(  <_> )  Y Y  \\  ___/   |  | (  <_> ) |    |__\\  ___/ >    <|  ||  |  \\|
-                                 \\__/\\  /  \\___  >____/\\___  >____/|__|_|  /\\___  >  |__|  \\____/  |_______ \\___  >__/\\_ \\__||__|  __
-                                      \\/       \\/          \\/            \\/     \\/                         \\/   \\/      \\/         \\/
-                   
-                   
-                   ___________.__            .___   __  .__              __      __                .___                          .___                                            
-                   \\_   _____/|__| ____    __| _/ _/  |_|  |__   ____   /  \\    /  \\___________  __| _/______ _____    ____    __| _/   ____   ______ ____ _____  ______   ____  
-                    |    __)  |  |/    \\  / __ |  \\   __\\  |  \\_/ __ \\  \\   \\/\\/   /  _ \\_  __ \\/ __ |/  ___/ \\__  \\  /    \\  / __ |  _/ __ \\ /  ___// ___\\\\__  \\ \\____ \\_/ __ \\ 
-                    |     \\   |  |   |  \\/ /_/ |   |  | |   Y  \\  ___/   \\        (  <_> )  | \\/ /_/ |\\___ \\   / __ \\|   |  \\/ /_/ |  \\  ___/ \\___ \\\\  \\___ / __ \\|  |_> >  ___/ 
-                    \\___  /   |__|___|  /\\____ |   |__| |___|  /\\___  >   \\__/\\  / \\____/|__|  \\____ /____  > (____  /___|  /\\____ |   \\___  >____  >\\___  >____  /   __/ \\___  >
-                        \\/            \\/      \\/             \\/     \\/         \\/                   \\/    \\/       \\/     \\/      \\/       \\/     \\/     \\/     \\/|__|        \\/ 
-                   
-                                                                                                     __  .__                _____                        
-                                                                                                   _/  |_|  |__   ____     /     \\ _____  ________ ____  
-                                                                                                   \\   __\\  |  \\_/ __ \\   /  \\ /  \\\\__  \\ \\___   // __ \\ 
-                                                                                                    |  | |   Y  \\  ___/  /    Y    \\/ __ \\_/    /\\  ___/ 
-                                                                                                    |__| |___|  /\\___  > \\____|__  (____  /_____ \\\\___  >
-                                                                                                              \\/     \\/          \\/     \\/      \\/    \\/ 
-
-
-
-
-
-
-
-
-""";
+        System.out.print("\n".repeat(3));
         Style.printStyled(graffiti, Style.FG_RED);
+        System.out.print("\n".repeat(8));
 
-        String[] options = {"New game", "LeaderBoard", "Exit"};
         String[][] parts = new String[options.length][];
         for (int i = 0; i < options.length; i++) {
             parts[i] = new String[] {
@@ -81,12 +78,51 @@ public class Renderer {
         for (int j = 0; j < parts[0].length; j++) {
             for (int i = 0; i < options.length; i++) {
                 System.out.print("                    ");
-                if (i == selected) Style.applyStyle(Style.BG_BLUE);
+                if (i == selected) Style.applyStyle(Style.BG_BLUE, Style.ST_BOLD);
                 System.out.print(parts[i][j]);
                 Style.resetStyle();
             }
             System.out.println();
         }
+    }
+
+    public static void renderMainMenu(int selected) {
+        renderMenu(new String[] {"New game", "LeaderBoard", "Exit"}, selected);
+    }
+
+    public static void renderDifficultyMenu(int selected) {
+        renderMenu(new String[] {"Easy", "Medium", "Hard"}, selected);
+    }
+
+    public static void renderThemesMenu(int selected) {
+        renderMenu(new String[] {"footballers", "countries", "animals"}, selected);
+    }
+
+    public static void renderLeaderBoardMenu() throws FileNotFoundException, IOException {
+        Style.clearScreen();
+        BufferedReader reader = new BufferedReader(new FileReader("leaderboard.txt"));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            System.out.println(center(line, 180)); // TODO: later on this should be centered based on the terminal width
+        }
+
+        String[] parts = new String[] {
+                "┌──────────────────────────────┐",
+                "│                              │",
+                "│                              │",
+                "│" + center("Return", 30) + "│",
+                "│                              │",
+                "│                              │",
+                "└──────────────────────────────┘"
+        };
+
+        for (int j = 0; j < parts.length; j++) {
+            System.out.print(" ".repeat(75));
+            Style.applyStyle(Style.BG_BLUE, Style.ST_BOLD);
+            System.out.println(parts[j]);
+            Style.resetStyle();
+        }
+
     }
 
     private static String[][][] getBoxes(char[][] matrix, int scalar) {

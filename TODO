@@ -1,0 +1,11 @@
+DONE:
+
+-   render the 8 directional movement
+-   add arrows usage for movement (keylisteners)
+-   create main menu (choose difficulty, choose words theme)
+
+TODO:
+
+-   add leaderboard showing the best scores
+-   add dinamically calculating max columns and max rows based on the terminal width and height
+-   add in game sounds

@@ -42,7 +42,7 @@ public class Player {
     public Player(Vertex position, String ...styles) {
         this.position = position;
         this.style = new ArrayList<>(Arrays.asList(styles));
-        this.score = 100;
+        this.score = 0;
     }
 
     public void move(char move) throws InvalidMoveException {
@@ -57,7 +57,7 @@ public class Player {
         else if (move == '9') to = this.position.getUpRight();
         else throw new InvalidMoveException("Invalid move, use the numbers 1, 2, 3, 4, 6, 7, 8, 9 to move.");
 
-        if (to == null) throw new InvalidMoveException("Invalid move, you can't go into the void.");
+        if (to == null) throw new InvalidMoveException("Invalid move, there is nothing there.");
         if (to.isWall()) throw new InvalidMoveException("Invalid move, you can't go through walls.");
         this.position = to;
     }
